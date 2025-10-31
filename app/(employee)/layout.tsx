@@ -1,7 +1,7 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 const navigation = [
@@ -14,13 +14,29 @@ const navigation = [
 
 export default function EmployeeLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+      router.push('/login')
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
       <header className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-3">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <h1 className="text-xl font-bold text-blue-600">Gastro Schedules</h1>
+          <button
+            onClick={handleLogout}
+            className="text-sm text-gray-600 hover:text-red-600 transition-colors"
+          >
+            🚪 Wyloguj
+          </button>
         </div>
       </header>
 

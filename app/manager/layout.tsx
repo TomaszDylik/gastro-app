@@ -1,7 +1,7 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 const navigation = [
@@ -15,6 +15,16 @@ const navigation = [
 
 export default function ManagerLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+      router.push('/login')
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -49,10 +59,12 @@ export default function ManagerLayout({ children }: { children: ReactNode }) {
               })}
             </nav>
 
-            <button className="text-gray-600 hover:text-gray-900">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
+            <button 
+              onClick={handleLogout}
+              className="text-gray-600 hover:text-red-600 transition-colors flex items-center gap-2"
+            >
+              <span className="text-sm hidden sm:inline">Wyloguj</span>
+              <span>🚪</span>
             </button>
           </div>
         </div>

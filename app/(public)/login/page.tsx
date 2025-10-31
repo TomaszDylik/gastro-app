@@ -20,23 +20,33 @@ export default function LoginPage() {
     setMessage('')
 
     try {
+      // 1. Zaloguj przez Supabase Auth
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
       if (error) throw error
+      if (!data.user) throw new Error('Nie udało się zalogować')
+      
+      // 2. Pobierz dane użytkownika z bazy (AppUser + Membership)
+      const userResponse = await fetch('/api/auth/me')
+      const userData = await userResponse.json()
+      
+      if (!userResponse.ok) {
+        throw new Error(userData.error || 'Nie znaleziono danych użytkownika')
+      }
       
       setMessage('✅ Zalogowano pomyślnie! Przekierowuję...')
       
-      // Przekierowanie w zależności od roli
+      // 3. Przekierowanie w zależności od roli z bazy danych
       setTimeout(() => {
-        if (userRole === 'manager') {
+        if (userData.role === 'manager') {
           router.push('/manager/dashboard')
         } else {
           router.push('/dashboard')
         }
-      }, 1000)
+      }, 500)
     } catch (error: any) {
       setMessage(`❌ Błąd: ${error.message}`)
     } finally {

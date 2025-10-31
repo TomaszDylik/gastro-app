@@ -1,13 +1,18 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { pl } from 'date-fns/locale'
 
-interface Restaurant {
+interface UserData {
   id: string
   name: string
+  email: string
+  role: string
+  restaurantName?: string
+  membershipId?: string
 }
 
 interface Stats {
@@ -18,7 +23,8 @@ interface Stats {
 }
 
 export default function ManagerDashboard() {
-  const [restaurant, setRestaurant] = useState<Restaurant | null>(null)
+  const router = useRouter()
+  const [userData, setUserData] = useState<UserData | null>(null)
   const [stats, setStats] = useState<Stats>({
     activeEmployees: 0,
     pendingApprovals: 0,
@@ -33,13 +39,17 @@ export default function ManagerDashboard() {
 
   const loadDashboardData = async () => {
     try {
-      // TODO: Pobierz dane z API
-      // Mock data
-      const mockRestaurant: Restaurant = {
-        id: 'rest1',
-        name: 'Restauracja "Pod Gruszą"'
+      // Fetch user data
+      const userResponse = await fetch('/api/auth/me')
+      if (!userResponse.ok) {
+        router.push('/login')
+        return
       }
+      const user = await userResponse.json()
+      setUserData(user)
 
+      // TODO: Pobierz statystyki z API
+      // Mock stats
       const mockStats: Stats = {
         activeEmployees: 2, // Obecnie w pracy
         pendingApprovals: 3, // Oczekujące zatwierdzenia
@@ -47,7 +57,6 @@ export default function ManagerDashboard() {
         todayShifts: 5 // Dzisiejsze zmiany
       }
 
-      setRestaurant(mockRestaurant)
       setStats(mockStats)
     } catch (error) {
       console.error('Błąd ładowania danych:', error)
@@ -55,6 +64,8 @@ export default function ManagerDashboard() {
       setLoading(false)
     }
   }
+
+  const firstName = userData?.name.split(' ')[0] || 'Managerze'
 
   if (loading) {
     return (
@@ -75,9 +86,9 @@ export default function ManagerDashboard() {
     <main className="container mx-auto p-6 max-w-6xl">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Panel Managera</h1>
+        <h1 className="text-3xl font-bold mb-2">Witaj, {firstName}! 👋</h1>
         <div className="flex items-center gap-3">
-          <span className="text-xl text-gray-600">{restaurant?.name}</span>
+          <span className="text-xl text-gray-600">{userData?.restaurantName}</span>
           <span className="text-sm text-gray-500">
             {format(new Date(), 'EEEE, d MMMM yyyy', { locale: pl })}
           </span>

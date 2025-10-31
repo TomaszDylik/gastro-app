@@ -3,6 +3,16 @@
 import { useState, useEffect } from 'react'
 import { format, differenceInMinutes } from 'date-fns'
 import { pl } from 'date-fns/locale'
+import { useRouter } from 'next/navigation'
+
+interface UserData {
+  id: string
+  name: string
+  email: string
+  role: string
+  restaurantName: string
+  membershipId: string
+}
 
 interface Shift {
   id: string
@@ -20,7 +30,9 @@ interface TimeEntry {
 }
 
 export default function DashboardPage() {
+  const router = useRouter()
   const [loading, setLoading] = useState(true)
+  const [userData, setUserData] = useState<UserData | null>(null)
   const [todayShift, setTodayShift] = useState<Shift | null>(null)
   const [activeEntry, setActiveEntry] = useState<TimeEntry | null>(null)
   const [elapsedTime, setElapsedTime] = useState(0)
@@ -41,6 +53,16 @@ export default function DashboardPage() {
 
   const loadDashboardData = async () => {
     try {
+      // Pobierz dane zalogowanego użytkownika
+      const userResponse = await fetch('/api/auth/me')
+      if (!userResponse.ok) {
+        router.push('/login')
+        return
+      }
+      
+      const user = await userResponse.json()
+      setUserData(user)
+
       // Pobierz dzisiejszą zmianę (mock - w rzeczywistości pobierz z API/Supabase)
       // TODO: Zaimplementuj prawdziwe zapytanie gdy będzie membership
       
@@ -62,6 +84,7 @@ export default function DashboardPage() {
 
     } catch (error) {
       console.error('Błąd ładowania danych:', error)
+      router.push('/login')
     } finally {
       setLoading(false)
     }
@@ -140,8 +163,13 @@ export default function DashboardPage() {
     <main className="container mx-auto p-4 max-w-2xl">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-1">Dashboard</h1>
+        <h1 className="text-2xl font-bold mb-1">
+          {userData?.name ? `Witaj, ${userData.name.split(' ')[0]}! 👋` : 'Dashboard'}
+        </h1>
         <p className="text-gray-600">{format(new Date(), 'EEEE, d MMMM yyyy', { locale: pl })}</p>
+        {userData?.restaurantName && (
+          <p className="text-sm text-gray-500 mt-1">📍 {userData.restaurantName}</p>
+        )}
       </div>
 
       {/* Dzisiejsza zmiana */}

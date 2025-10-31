@@ -14,9 +14,17 @@ export async function middleware(req: NextRequest) {
   // Publiczne ścieżki (dostępne bez logowania)
   const publicPaths = ['/login', '/auth/callback', '/invite']
   const isPublicPath = publicPaths.some(path => req.nextUrl.pathname.startsWith(path))
+  
+  // API routes - nie przekierowuj, zwróć 401
+  const isApiRoute = req.nextUrl.pathname.startsWith('/api/')
 
   // Jeśli użytkownik NIE jest zalogowany i próbuje wejść na chronioną stronę
   if (!session && !isPublicPath) {
+    // Dla API zwróć 401
+    if (isApiRoute) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    // Dla zwykłych stron przekieruj na login
     const redirectUrl = new URL('/login', req.url)
     return NextResponse.redirect(redirectUrl)
   }

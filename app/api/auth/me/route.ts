@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { PrismaClient } from '@prisma/client'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
@@ -7,21 +7,9 @@ const prisma = new PrismaClient()
 
 export async function GET() {
   try {
-    // 1. Pobierz session z cookies
+    // 1. Create Supabase client with cookies
     const cookieStore = cookies()
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      auth: {
-        persistSession: false
-      },
-      global: {
-        headers: {
-          cookie: cookieStore.toString()
-        }
-      }
-    })
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
 
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 

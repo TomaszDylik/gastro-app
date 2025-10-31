@@ -20,7 +20,7 @@ export default function LoginPage() {
     setMessage('')
 
     try {
-      // 1. Zaloguj przez Supabase Auth
+      // Zaloguj przez Supabase Auth z PKCE flow (używa callback URL)
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -29,27 +29,15 @@ export default function LoginPage() {
       if (error) throw error
       if (!data.user) throw new Error('Nie udało się zalogować')
       
-      // 2. Pobierz dane użytkownika z bazy (AppUser + Membership)
-      const userResponse = await fetch('/api/auth/me')
-      const userData = await userResponse.json()
+      console.log('✅ Login successful, user:', data.user.email)
       
-      if (!userResponse.ok) {
-        throw new Error(userData.error || 'Nie znaleziono danych użytkownika')
-      }
-      
-      setMessage('✅ Zalogowano pomyślnie! Przekierowuję...')
-      
-      // 3. Przekierowanie w zależności od roli z bazy danych
-      setTimeout(() => {
-        if (userData.role === 'manager') {
-          router.push('/manager/dashboard')
-        } else {
-          router.push('/dashboard')
-        }
-      }, 500)
+      // Bezpośrednie przekierowanie - session jest już zapisana przez Supabase
+      // Używamy router.push bo session jest już w cookies
+      router.push('/dashboard')
+      router.refresh()
     } catch (error: any) {
+      console.error('❌ Login error:', error)
       setMessage(`❌ Błąd: ${error.message}`)
-    } finally {
       setLoading(false)
     }
   }

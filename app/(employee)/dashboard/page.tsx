@@ -61,6 +61,13 @@ export default function DashboardPage() {
       }
       
       const user = await userResponse.json()
+      
+      // Jeśli to manager, przekieruj na panel managera
+      if (user.role === 'manager') {
+        router.push('/manager/dashboard')
+        return
+      }
+      
       setUserData(user)
 
       // Pobierz dzisiejszą zmianę (mock - w rzeczywistości pobierz z API/Supabase)

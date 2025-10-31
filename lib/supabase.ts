@@ -1,9 +1,8 @@
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Client-side Supabase client (używa cookies, współpracuje z middleware)
+export const supabase = createClientComponentClient()
 
 // Dla użycia po stronie serwera (np. w API routes)
 export function getServiceSupabase() {

@@ -36,6 +36,36 @@ Szkielet projektu zgodny z wymaganiami z `prompt_prod.txt`:
    pnpm test:e2e
    ```
 
+## 👥 Konta testowe
+
+Po uruchomieniu seedu będą dostępne następujące konta:
+
+### Manager (Restauracja "Pod Gruszą")
+- 📧 Email: `manager@podgrusza.pl`
+- 🔑 Hasło: `manager123`
+- 🏢 Restauracja: "Pod Gruszą"
+- ✅ Uprawnienia: zarządzanie grafikami, zespołem, zatwierdzanie czasu pracy
+
+### Pracownik 1 - Anna Kowalska
+- 📧 Email: `anna.kowalska@podgrusza.pl`
+- 🔑 Hasło: `pracownik123`
+- 👔 Stanowisko: Kelnerka
+- 📅 Grafik: Poniedziałek-Piątek 9:00-17:00
+
+### Pracownik 2 - Jan Nowak
+- 📧 Email: `jan.nowak@podgrusza.pl`
+- 🔑 Hasło: `pracownik123`
+- 👔 Stanowisko: Kucharz
+- 📅 Grafik: Poniedziałek-Piątek 10:00-18:00
+
+**Jak testować:**
+1. Wejdź na `/login`
+2. Wybierz rolę (Manager/Pracownik)
+3. Zaloguj się emailem i hasłem z powyższej listy
+4. Lub pomiń logowanie i wejdź bezpośrednio:
+   - Pracownik: `/dashboard`
+   - Manager: `/manager/dashboard`
+
 ## Struktura
 
 - `app/(public)` — logowanie i zaproszenia

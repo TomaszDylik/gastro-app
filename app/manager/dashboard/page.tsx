@@ -238,20 +238,6 @@ export default function ManagerDashboard() {
           </Link>
         </div>
       </div>
-
-      {/* Informacje */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex items-start gap-3">
-          <span className="text-2xl">💡</span>
-          <div>
-            <h3 className="font-semibold text-blue-900 mb-1">Wskazówka</h3>
-            <p className="text-sm text-blue-800">
-              W sekcji "Zarządzaj czasem" możesz na żywo śledzić pracowników w pracy 
-              oraz zatwierdzać ich wpisy czasu. Pamiętaj, że do 5 grafików możesz utworzyć!
-            </p>
-          </div>
-        </div>
-      </div>
     </main>
   )
 }

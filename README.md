@@ -41,22 +41,22 @@ Szkielet projektu zgodny z wymaganiami z `prompt_prod.txt`:
 Po uruchomieniu seedu będą dostępne następujące konta:
 
 ### Manager (Restauracja "Pod Gruszą")
-- 📧 Email: `manager@podgrusza.pl`
-- 🔑 Hasło: `manager123`
+- 📧 Email: `manager@gmail.pl`
+- 🔑 Hasło: `password`
 - 🏢 Restauracja: "Pod Gruszą"
 - ✅ Uprawnienia: zarządzanie grafikami, zespołem, zatwierdzanie czasu pracy
 
 ### Pracownik 1 - Anna Kowalska
-- 📧 Email: `anna.kowalska@podgrusza.pl`
-- 🔑 Hasło: `pracownik123`
+- 📧 Email: `employee1@gmail.pl`
+- 🔑 Hasło: `password`
 - 👔 Stanowisko: Kelnerka
-- 📅 Grafik: Poniedziałek-Piątek 9:00-17:00
+- 📅 Grafik: Dzisiaj 9:00-17:00
 
 ### Pracownik 2 - Jan Nowak
-- 📧 Email: `jan.nowak@podgrusza.pl`
-- 🔑 Hasło: `pracownik123`
+- 📧 Email: `employee2@gmail.pl`
+- 🔑 Hasło: `password`
 - 👔 Stanowisko: Kucharz
-- 📅 Grafik: Poniedziałek-Piątek 10:00-18:00
+- 📅 Grafik: Dzisiaj 10:00-18:00
 
 **Jak testować:**
 1. Wejdź na `/login`

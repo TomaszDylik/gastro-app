@@ -34,10 +34,10 @@ async function main() {
   console.log('✅ Restaurant created:', restaurant.name)
 
   // 2. Utwórz użytkowników w Supabase Auth
-  const managerEmail = 'manager@podgrusza.pl'
-  const employee1Email = 'anna.kowalska@podgrusza.pl'
-  const employee2Email = 'jan.nowak@podgrusza.pl'
-  const password = 'test123!'
+  const managerEmail = 'manager@gmail.pl'
+  const employee1Email = 'employee1@gmail.pl'
+  const employee2Email = 'employee2@gmail.pl'
+  const password = 'password'
 
   // Manager
   const { data: managerAuth, error: managerError } = await supabaseAdmin.auth.admin.createUser({

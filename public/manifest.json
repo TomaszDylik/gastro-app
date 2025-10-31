@@ -1,0 +1,9 @@
+{
+  "name": "Gastro Schedules",
+  "short_name": "Gastro",
+  "start_url": "/(employee)/dashboard",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#111827",
+  "icons": []
+}

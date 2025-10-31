@@ -1,0 +1,208 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model AppUser {
+  id           String   @id @default(cuid())
+  authUserId   String   @unique
+  name         String?
+  phone        String?
+  locale       String?  @default("pl-PL")
+  memberships  Membership[]
+  auditLogs    AuditLog[] @relation("AuditActor")
+  createdAt    DateTime @default(now())
+}
+
+model Restaurant {
+  id          String      @id @default(cuid())
+  name        String
+  timezone    String
+  settings    RestaurantSettings?
+  memberships Membership[]
+  schedules   Schedule[]
+  invites     Invite[]
+  auditLogs   AuditLog[]
+  createdAt   DateTime    @default(now())
+}
+
+model Membership {
+  id           String     @id @default(cuid())
+  userId       String
+  restaurantId String
+  role         Role
+  hourlyRatePLN Decimal?  @db.Decimal(10,2)
+  status       Status     @default(pending)
+  createdAt    DateTime   @default(now())
+
+  user         AppUser    @relation(fields: [userId], references: [id])
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  availabilities Availability[]
+  timeEntries  TimeEntry[]
+  shiftAssignments ShiftAssignment[]
+  payrollMonthly PayrollMonthly[]
+
+  @@index([restaurantId, role])
+}
+
+model Schedule {
+  id           String     @id @default(cuid())
+  restaurantId String
+  name         String
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  shifts       Shift[]
+  availabilities Availability[]
+  timeEntries  TimeEntry[]
+
+  @@index([restaurantId])
+}
+
+model Availability {
+  id            String     @id @default(cuid())
+  membershipId  String
+  scheduleId    String?
+  start         DateTime
+  end           DateTime
+  recurrenceRule String?
+  note          String?
+  status        AvailabilityStatus @default(proposed)
+
+  membership    Membership @relation(fields: [membershipId], references: [id])
+  schedule      Schedule?  @relation(fields: [scheduleId], references: [id])
+}
+
+model Shift {
+  id         String   @id @default(cuid())
+  scheduleId String
+  start      DateTime
+  end        DateTime
+  roleTag    String?
+  notes      String?
+
+  schedule   Schedule @relation(fields: [scheduleId], references: [id])
+  assignments ShiftAssignment[]
+
+  @@index([scheduleId, start])
+}
+
+model ShiftAssignment {
+  id           String    @id @default(cuid())
+  shiftId      String
+  membershipId String
+  status       ShiftAssignmentStatus @default(assigned)
+
+  shift        Shift     @relation(fields: [shiftId], references: [id])
+  membership   Membership @relation(fields: [membershipId], references: [id])
+}
+
+model TimeEntry {
+  id           String   @id @default(cuid())
+  membershipId String
+  scheduleId   String
+  clockIn      DateTime
+  clockOut     DateTime?
+  approvedByUserId String?
+  approvedAt   DateTime?
+  source       TimeEntrySource @default(manual)
+  status       TimeEntryStatus @default(active)
+  adjustmentMinutes Int @default(0)
+  reason       String?
+
+  membership   Membership @relation(fields: [membershipId], references: [id])
+  schedule     Schedule   @relation(fields: [scheduleId], references: [id])
+
+  @@index([membershipId, clockIn])
+}
+
+model PayrollMonthly {
+  id            String  @id @default(cuid())
+  membershipId  String
+  periodMonth   DateTime
+  hoursTotal    Decimal @db.Decimal(10,2)
+  amountTotal   Decimal @db.Decimal(10,2)
+  exportedAt    DateTime?
+
+  membership    Membership @relation(fields: [membershipId], references: [id])
+}
+
+model Invite {
+  id           String    @id @default(cuid())
+  restaurantId String
+  contact      String
+  role         InviteRole
+  tokenHash    String
+  expiresAt    DateTime
+  usedAt       DateTime?
+
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  actorUserId  String
+  restaurantId String?
+  entityType   String
+  entityId     String
+  action       String
+  before       Json?
+  after        Json?
+  createdAt    DateTime @default(now())
+
+  actor        AppUser  @relation("AuditActor", fields: [actorUserId], references: [id])
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
+}
+
+model RestaurantSettings {
+  id           String   @id @default(cuid())
+  restaurantId String   @unique
+  enableGeo    Boolean  @default(false)
+
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+}
+
+enum Role {
+  super_admin
+  manager
+  employee
+}
+
+enum InviteRole {
+  manager
+  employee
+}
+
+enum Status {
+  active
+  pending
+}
+
+enum AvailabilityStatus {
+  proposed
+  accepted
+}
+
+enum ShiftAssignmentStatus {
+  assigned
+  declined
+  completed
+}
+
+enum TimeEntrySource {
+  manual
+  gps
+  email
+}
+
+enum TimeEntryStatus {
+  active
+  pending
+  approved
+  rejected
+}

@@ -8,18 +8,28 @@ datasource db {
 }
 
 model AppUser {
-  id           String   @id @default(cuid())
-  authUserId   String   @unique
-  name         String?
-  phone        String?
-  locale       String?  @default("pl-PL")
-  memberships  Membership[]
-  auditLogs    AuditLog[] @relation("AuditActor")
-  createdAt    DateTime @default(now())
+  id                    String   @id @default(cuid())
+  authUserId            String   @unique
+  name                  String?
+  email                 String?
+  phone                 String?
+  locale                String   @default("pl-PL")
+  hourlyRateDefaultPLN  Decimal? @db.Decimal(10,2)
+  memberships           Membership[]
+  auditLogs             AuditLog[] @relation("AuditActor")
+  createdAt             DateTime @default(now())
+}
+
+model Company {
+  id          String       @id @default(cuid())
+  name        String
+  restaurants Restaurant[]
+  createdAt   DateTime     @default(now())
 }
 
 model Restaurant {
   id          String      @id @default(cuid())
+  companyId   String?
   name        String
   timezone    String
   settings    RestaurantSettings?
@@ -27,25 +37,30 @@ model Restaurant {
   schedules   Schedule[]
   invites     Invite[]
   auditLogs   AuditLog[]
+  dailyReportSignatures DailyReportSignature[]
+  reportsDaily   ReportDaily[]
+  reportsWeekly  ReportWeekly[]
+  reportsMonthly ReportMonthly[]
   createdAt   DateTime    @default(now())
+  
+  company     Company?    @relation(fields: [companyId], references: [id])
 }
 
 model Membership {
-  id           String     @id @default(cuid())
-  userId       String
-  restaurantId String
-  role         Role
-  hourlyRateEmployee Decimal?  @db.Decimal(10,2)  // Rate when working as employee
-  hourlyRateManager  Decimal?  @db.Decimal(10,2)  // Rate when working as manager
-  status       Status     @default(pending)
-  createdAt    DateTime   @default(now())
+  id                  String     @id @default(cuid())
+  userId              String
+  restaurantId        String
+  role                Role
+  hourlyRateManagerPLN Decimal?  @db.Decimal(10,2)  // Rate when working as manager (replaces hourlyRateEmployee/Manager)
+  status              Status     @default(pending)
+  createdAt           DateTime   @default(now())
 
-  user         AppUser    @relation(fields: [userId], references: [id])
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
-  availabilities Availability[]
-  timeEntries  TimeEntry[]
-  shiftAssignments ShiftAssignment[]
-  payrollMonthly PayrollMonthly[]
+  user                AppUser    @relation(fields: [userId], references: [id])
+  restaurant          Restaurant @relation(fields: [restaurantId], references: [id])
+  availabilities      Availability[]
+  timeEntries         TimeEntry[]
+  shiftAssignments    ShiftAssignment[]
+  payrollMonthly      PayrollMonthly[]
 
   @@index([restaurantId, role])
 }
@@ -101,25 +116,28 @@ model ShiftAssignment {
 
   shift        Shift     @relation(fields: [shiftId], references: [id])
   membership   Membership @relation(fields: [membershipId], references: [id])
+  
+  @@index([membershipId, shiftId])
 }
 
 model TimeEntry {
-  id           String   @id @default(cuid())
-  membershipId String
-  scheduleId   String
-  clockIn      DateTime
-  clockOut     DateTime?
-  approvedByUserId String?
-  approvedAt   DateTime?
-  source       TimeEntrySource @default(manual)
-  status       TimeEntryStatus @default(active)
-  adjustmentMinutes Int @default(0)
-  reason       String?
+  id                String   @id @default(cuid())
+  membershipId      String
+  scheduleId        String
+  clockIn           DateTime
+  clockOut          DateTime?
+  approvedByUserId  String?
+  approvedAt        DateTime?
+  source            TimeEntrySource @default(manual)
+  status            TimeEntryStatus @default(active)
+  adjustmentMinutes Int      @default(0)
+  note              String?
 
-  membership   Membership @relation(fields: [membershipId], references: [id])
-  schedule     Schedule   @relation(fields: [scheduleId], references: [id])
+  membership        Membership @relation(fields: [membershipId], references: [id])
+  schedule          Schedule   @relation(fields: [scheduleId], references: [id])
 
   @@index([membershipId, clockIn])
+  @@index([scheduleId, clockIn])
 }
 
 model PayrollMonthly {
@@ -168,8 +186,79 @@ model RestaurantSettings {
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
 }
 
+model DailyReportSignature {
+  id           String   @id @default(cuid())
+  restaurantId String
+  date         DateTime @db.Date
+  signedByUserId String
+  signedByName String
+  signedAt     DateTime @default(now())
+  notes        String?
+  
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+
+  @@unique([restaurantId, date])
+  @@index([restaurantId, date])
+}
+
+model ReportDaily {
+  id               String   @id @default(cuid())
+  restaurantId     String
+  date             DateTime @db.Date
+  totalsJson       Json     // snapshot stawek/kwot
+  signedByUserId   String?
+  signedAt         DateTime?
+  signatureLogJson Json[]   @default([])
+  
+  restaurant       Restaurant @relation(fields: [restaurantId], references: [id])
+  
+  @@unique([restaurantId, date])
+  @@index([restaurantId, date])
+}
+
+model ReportWeekly {
+  id           String   @id @default(cuid())
+  restaurantId String
+  weekStart    DateTime @db.Date  // Monday of the week
+  totalsJson   Json
+  fileId       String?
+  createdAt    DateTime @default(now())
+  
+  restaurant   Restaurant    @relation(fields: [restaurantId], references: [id])
+  file         FileStorage?  @relation(fields: [fileId], references: [id])
+  
+  @@unique([restaurantId, weekStart])
+}
+
+model ReportMonthly {
+  id           String   @id @default(cuid())
+  restaurantId String
+  periodMonth  DateTime @db.Date  // First day of the month (YYYY-MM-01)
+  totalsJson   Json
+  fileId       String?
+  createdAt    DateTime @default(now())
+  
+  restaurant   Restaurant    @relation(fields: [restaurantId], references: [id])
+  file         FileStorage?  @relation(fields: [fileId], references: [id])
+  
+  @@unique([restaurantId, periodMonth])
+}
+
+model FileStorage {
+  id              String   @id @default(cuid())
+  path            String
+  kind            FileKind
+  sizeBytes       Int
+  createdAt       DateTime @default(now())
+  expiresAt       DateTime?  // For automatic deletion after 3 years
+  
+  reportsWeekly   ReportWeekly[]
+  reportsMonthly  ReportMonthly[]
+}
+
 enum Role {
   super_admin
+  owner
   manager
   employee
 }
@@ -206,4 +295,10 @@ enum TimeEntryStatus {
   pending
   approved
   rejected
+}
+
+enum FileKind {
+  csv
+  xlsx
+  pdf
 }

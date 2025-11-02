@@ -91,7 +91,9 @@ async function main() {
     create: {
       authUserId: managerAuth?.user?.id || 'manager-id',
       name: 'Paweł Kowalski',
-      phone: '+48 600 100 200'
+      email: managerEmail,
+      phone: '+48 600 100 200',
+      hourlyRateDefaultPLN: '45.00'
     }
   })
 
@@ -101,7 +103,9 @@ async function main() {
     create: {
       authUserId: emp1Auth?.user?.id || 'emp1-id',
       name: 'Anna Kowalska',
-      phone: '+48 600 100 201'
+      email: employee1Email,
+      phone: '+48 600 100 201',
+      hourlyRateDefaultPLN: '35.00'
     }
   })
 
@@ -111,7 +115,9 @@ async function main() {
     create: {
       authUserId: emp2Auth?.user?.id || 'emp2-id',
       name: 'Jan Nowak',
-      phone: '+48 600 100 202'
+      email: employee2Email,
+      phone: '+48 600 100 202',
+      hourlyRateDefaultPLN: '40.00'
     }
   })
 
@@ -123,7 +129,8 @@ async function main() {
       userId: managerUser.id,
       restaurantId: restaurant.id,
       role: 'manager',
-      status: 'active'
+      status: 'active',
+      hourlyRateManagerPLN: '55.00'  // Manager rate for this manager
     }
   })
 
@@ -132,8 +139,8 @@ async function main() {
       userId: emp1User.id,
       restaurantId: restaurant.id,
       role: 'employee',
-      status: 'active',
-      hourlyRateEmployee: '35.00'
+      status: 'active'
+      // Uses hourlyRateDefaultPLN from AppUser (35.00)
     }
   })
 
@@ -142,8 +149,8 @@ async function main() {
       userId: emp2User.id,
       restaurantId: restaurant.id,
       role: 'employee',
-      status: 'active',
-      hourlyRateEmployee: '40.00'
+      status: 'active'
+      // Uses hourlyRateDefaultPLN from AppUser (40.00)
     }
   })
 

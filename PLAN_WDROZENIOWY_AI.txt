@@ -1,0 +1,301 @@
+# PLAN_WDROZENIOWY_AI.txt
+# Gastro Schedules — Kompletny plan wdrożeniowy (1 plik, etapy → testy → poprawki)
+
+Cel: Dokończyć i zintegrować system planowania i rozliczania pracy w gastronomii (Next.js + TypeScript + Prisma + Supabase),
+według ustalonej architektury i odpowiedzi właściciela. Plan jest podzielony na etapy. **Po każdym etapie uruchom testy i napraw błędy zanim przejdziesz dalej.**
+
+──────────────────────────────────────────────────────────────────────────────
+
+## 0. Zasady ogólne
+
+- Stos technologiczny: **Next.js 14 (App Router) + TypeScript + Prisma + Supabase (PostgreSQL)**.
+- Menedżer pakietów: **pnpm**.
+- RLS w Supabase – wg zasad poniżej.
+- Modele **Owner (właściciel)**, **Manager**, **Pracownik**, **Admin** – hierarchia: **admin > owner > manager > pracownik**.
+- **Brak powiadomień i e-maili** na start (brak Resend, brak SMS, brak in-app notyfikacji).
+- **Raporty** (dzienny/tygodniowy/miesięczny) generowane i dostępne w **UI**, bez wysyłki e-mail.
+- **Retencja plików raportów: 3 lata**, potem automatyczne usunięcie.
+- **Strefa czasu**: Europe/Warsaw.
+- **Waluta**: PLN, **zaokrąglenia**: godziny i kwoty do **2 miejsc**.
+- **Zmiany przez północ**: dozwolone; raport dzienny przypisujemy wg **daty startu** zmiany.
+- **DST (zmiana czasu)**: liczymy **realne przepracowane godziny** (uwzględnij +/−1h).
+- **Kategorie grafików**: konfigurowane przez managera (do **5**), brak domyślnych.
+- **Pracownik/Manager/Owner mogą należeć do wielu restauracji**; po zalogowaniu wybierają **kontekst** (firma/restauracja/rozwinięcie panelu).
+
+**Kody błędów domenowych** (używaj w API i logice):  
+`SHIFT_OVERLAP_FOR_MEMBER`, `REPORT_SIGNED`, `NO_AVAILABILITY_NEXT_WEEK`,  
+`NOT_OWNER_OR_MANAGER`, `NOT_FOUND`, `VALIDATION_ERROR`.
+
+**Uwaga o podpisie raportu**: raport można **podpisać**, ale właściciel chce móc **wzruszyć podpis i korygować** (wraz z pełnym **AuditLog**).  
+Zaimplementuj tryb: „**podpisany**" oraz akcję „**cofnij podpis (z logiem)**".
+
+──────────────────────────────────────────────────────────────────────────────
+
+## ETAP 1 — Modele danych i migracje Prisma
+
+### 1.1. Modele (prisma/schema.prisma)
+Dodaj/uzupełnij modele (nazwy w EN, etykiety w UI po polsku):
+
+- **AppUser**: `id, authUserId(unique), name?, email?, phone?, locale='pl-PL', hourlyRateDefaultPLN? Decimal(10,2), createdAt`
+- **Company** (na potrzeby multi-restauracji pod jednym właścicielem): `id, name, createdAt`
+- **Restaurant**: `id, companyId?, name, timezone, createdAt`
+- **Membership** (User ↔ Restaurant): `id, userId, restaurantId, role ('owner'|'manager'|'employee'|'super_admin'), hourlyRateManagerPLN? Decimal(10,2), status('active'|'pending'), createdAt`
+- **Schedule**: `id, restaurantId, name (to nazwa kategorii: "Kelnerzy","Kuchnia"...), isActive, createdAt`
+- **Availability**: `id, membershipId, start, end, note?`
+- **Shift**: `id, scheduleId, start, end, notes?`
+- **ShiftAssignment**: `id, shiftId, membershipId, status('assigned'|'declined'|'completed')`
+- **TimeEntry**: `id, membershipId, scheduleId, clockIn, clockOut?, source('manual'|'email'), approvedByUserId?, approvedAt?, adjustmentMinutes=0, note?`
+- **ReportDaily**: `id, restaurantId, date, totalsJson(Json) // snapshot stawek/kwot, signedByUserId?, signedAt?, signatureLogJson(Json[])?`
+- **ReportWeekly**: `id, restaurantId, weekStart(Date), totalsJson(Json), fileId?, createdAt`
+- **ReportMonthly**: `id, restaurantId, periodMonth(Date), totalsJson(Json), fileId?, createdAt`
+- **FileStorage** (jeśli nie masz innego mechanizmu): `id, path, kind('csv'|'xlsx'|'pdf'), sizeBytes, createdAt, expiresAt?`
+- **AuditLog**: `id, actorUserId, restaurantId?, entityType, entityId, action, before?, after?, createdAt`
+
+Indeksy:  
+- TimeEntry: `(membershipId, clockIn)`, `(scheduleId, clockIn)`  
+- Shift: `(scheduleId, start)`  
+- ShiftAssignment: `(membershipId, shiftId)`  
+- ReportDaily: `(restaurantId, date)`.
+
+### 1.2. Reguły stawek (logika)
+Efektywna stawka: `effectiveHourlyRatePLN = membership.hourlyRateManagerPLN ?? user.hourlyRateDefaultPLN ?? 0`.
+
+### 1.3. Migracje
+Uruchom:
+```
+pnpm prisma generate
+pnpm prisma migrate dev --name init_models_owner_multirestaurant
+```
+
+### 1.4. TESTY (zanim przejdziesz dalej)
+- Unit: tworzenie modeli, relacje (Membership → Restaurant), `effectiveHourlyRatePLN` (3 przypadki).  
+- DB: walidacja NOT NULL / typów; migracja przechodzi bez błędów.
+
+──────────────────────────────────────────────────────────────────────────────
+
+## ETAP 2 — Uwierzytelnianie i zaproszenia (tylko e-mail, brak SMS)
+
+### 2.1. Supabase Auth
+- Tylko **magic link e-mail**.  
+- Rejestracja **wyłącznie przez zaproszenia (token 24h)**:
+  - Owner → zaprasza Managera; Manager → zaprasza Pracownika.
+  - Po akceptacji tokenu: twórz `AppUser`, `Membership` z odpowiednią rolą i restauracją/schedulami.
+
+### 2.2. Widoczność po zaproszeniu
+- Pracownik widzi **tylko** panele i grafiki, do których otrzymał dostęp (kategoria/grafik).  
+- Po zalogowaniu, wybiera **kontekst restauracji i kategorii** (jeśli ma wiele).
+
+### 2.3. TESTY
+- E2E: przepływ zaproszenia Owner→Manager, Manager→Employee (token wygasa po 24h).  
+- Unit: generator/validator tokenu, uprawnienia domyślne po akceptacji.
+
+──────────────────────────────────────────────────────────────────────────────
+
+## ETAP 3 — RBAC i RLS (Supabase)
+
+### 3.1. Uprawnienia
+- **Admin**: serwisowy odczyt wszystkiego; panel wsparcia (bez ingerencji w dane biznesowe).
+- **Owner**: **wgląd** do grafików, wpisów czasu i raportów **wszystkich restauracji firmy**; może **dodawać managerów**; **nie edytuje** wpisów czasu i grafików.
+- **Manager**: pełne zarządzanie grafikami, zmianami, przypisaniami, wpisami czasu (z wyjątkami w E.2/E.3).
+- **Pracownik**: własny start/stop, edycja własnych wpisów **do momentu podpisu raportu** (patrz E.2/E.3).
+
+### 3.2. RLS — szkic polityk
+- Employee: SELECT/INSERT/UPDATE **tylko własne** Availability/TimeEntry; READ własne zmiany.  
+- Manager: CRUD na Scheduling/TimeEntry/Reports **w swoich restauracjach**.  
+- Owner: READ na wszystkich restauracjach **firmy** (raporty, grafiki, wpisy czasu).  
+- Admin: READ globalny (wsparcie).
+
+### 3.3. TESTY
+- E2E: sprawdź, że pracownik nie odczyta innej restauracji; owner widzi wszystkie restauracje firmy; manager tylko swoje.
+
+──────────────────────────────────────────────────────────────────────────────
+
+## ETAP 4 — Kategorie/grafiki i walidacje
+
+### 4.1. Kategorie (Schedule)
+- Manager konfiguruje do **5 kategorii** per restauracja (np. „Kelnerzy", „Kuchnia", „Sprzątanie").  
+- W każdej kategorii tworzy **Zmiany (Shift)** i przypisania **ShiftAssignment**.
+
+### 4.2. Brak nakładania zmian
+- Twarda walidacja: ten sam `membershipId` **nie może** mieć dwóch nakładających się zmian `[start,end)` **we wszystkich kategoriach**.  
+- Zwrot błędu: `409 SHIFT_OVERLAP_FOR_MEMBER`.
+
+### 4.3. Zmiany przez północ + DST
+- Pozwól na `start` < `end` następnego dnia; w raportach licz realne godziny (uwzględnij DST).
+
+### 4.4. TESTY
+- Unit: algorytm konfliktów (krawędzie: styk minut, przez północ, DST).  
+- E2E: tworzenie zmian w wielu kategoriach; próba przypisania kolizyjnego → błąd 409.
+
+──────────────────────────────────────────────────────────────────────────────
+
+## ETAP 5 — Start/Stop i uprawnienia do korekt
+
+### 5.1. Zachowanie
+- Pracownik: **Start** (clockIn), **Stop** (clockOut).  
+- Jeśli zapomni Start, może wprowadzić ręcznie godzinę **przed podpisem raportu**.  
+- **Manager może zakończyć zmianę pracownika** (ustawić ClockOut) **jeśli pracownik nie kliknął Stop do północy** lub na prośbę — ale **nie modyfikuje godzin** arbitralnie; akceptuje/odrzuca propozycję pracownika.
+
+### 5.2. TESTY
+- E2E: pracownik start/stop; pracownik edytuje start przed podpisem; manager zamyka wiszącą zmianę; walidacja konfliktu z inną zmianą.
+
+──────────────────────────────────────────────────────────────────────────────
+
+## ETAP 6 — Raport dzienny + podpis i log zmian
+
+### 6.1. Generowanie
+- Po zamknięciu dnia (wszyscy mają stop), wygeneruj `ReportDaily` dla restauracji (snapshot `totalsJson`: godziny, stawki, kwoty per pracownik).  
+- **Stawka efektywna**: `manager > pracownik`. Kwoty i stawki przechowuj w snapshotcie (nie przeliczać historii po zmianie stawek).
+
+### 6.2. Podpis
+- Manager podpisuje raport: `signedByUserId`, `signedAt`.  
+- **Cofnięcie podpisu** dozwolone (manager/owner) → zapis w `AuditLog` i `signatureLogJson[]`.
+
+### 6.3. TESTY
+- E2E: generacja raportu → podpis → próba edycji → cofnięcie podpisu → edycja → ponowny podpis.  
+- Unit: snapshot zawiera stawki/kwoty zgodnie z konfiguracją stawek.
+
+──────────────────────────────────────────────────────────────────────────────
+
+## ETAP 7 — Raporty tygodniowe i miesięczne (bez e-mail, w UI)
+
+### 7.1. Generatory
+- `ReportWeekly` (tydzień pon–niedz) i `ReportMonthly` (YYYY-MM).  
+- Zapisz agregaty (totalsJson) i opcjonalnie plik (CSV/XLSX) do storage.  
+- **Domyślny format: XLSX**, opcjonalnie **CSV** z UI.
+
+### 7.2. Dostęp
+- **Owner i Manager** mają dostęp do raportów tygodniowych i miesięcznych z poziomu UI.  
+- Wersje plikowe przechowuj **3 lata** (Supabase Storage / bucket `exports/`).
+
+### 7.3. CRON (Supabase Scheduled Functions)
+- Harmonogram tworzący **co tydzień** (pon 06:00) i **co miesiąc** (1-szy dzień 08:00) agregaty i pliki, **bez wysyłki**.
+- Strefa czasu: Europe/Warsaw.
+
+### 7.4. TESTY
+- Unit: agregacja na tydzień/miesiąc, prawidłowe przypisywanie zmian przez północ.  
+- E2E: uruchomienie jobu (manual trigger) → powstają rekordy i pliki.
+
+──────────────────────────────────────────────────────────────────────────────
+
+## ETAP 8 — Eksporty: formaty i UI pobierania
+
+### 8.1. Format PL (szczegółowy)
+`id_pracownika, imie_nazwisko, id_restauracji, nazwa_restauracji, data, wejscie, wyjscie, godziny, stawka_pln, kwota_pln, zrodlo, zatwierdzil, zatwierdzone_o, uwagi`
+
+### 8.2. Format PL (miesięczny agregat)
+`id_pracownika, imie_nazwisko, id_restauracji, nazwa_restauracji, miesiac, suma_godzin, stawka_pln, suma_kwota_pln`
+
+### 8.3. UI
+- Sekcja „Raporty" → listy „Dzienne / Tygodniowe / Miesięczne" z pobieraniem plików (signed URL, domyślna ważność 7 dni).  
+- Polityka retencji: automatycznie usuwaj po 3 latach (zadanie okresowe).
+
+### 8.4. TESTY
+- Unit: generator CSV/XLSX (kolumny, encoding), signed URL.  
+- E2E: pobieranie z listy, brak dostępu poza uprawnieniami.
+
+──────────────────────────────────────────────────────────────────────────────
+
+## ETAP 9 — Panele: Admin, Owner, Manager, Pracownik (UX)
+
+### 9.1. Admin
+- Osobny login; dashboard firm i restauracji; **read-only** + narzędzia wsparcia.
+
+### 9.2. Owner
+- Tworzenie firm, dodawanie managerów; wgląd do wszystkich restauracji firmy; raporty tyg./mies.; podgląd dziennych; bez edycji wpisów.
+
+### 9.3. Manager
+- Konfiguracja kategorii (do 5), zapraszanie pracowników (token 24h).  
+- Widok „Dzisiejsi na zmianie" (może zakończyć wiszące zmiany).  
+- Układanie grafików wg dyspozycyjności; tworzenie zmian, przypisania; zamykanie dnia; raport dzienny + podpis/cofnięcie.
+
+### 9.4. Pracownik
+- „Aktualna zmiana": Start/Stop, edycja start/stop **do podpisu**.  
+- „Dyspozycyjność": proste okna czasowe.  
+- „Historia pracy": lista dni, sumy.  
+- Może opuścić firmę/grafik.
+
+### 9.5. TESTY
+- E2E ścieżki czterech ról; dostępność i ochrona tras.
+
+──────────────────────────────────────────────────────────────────────────────
+
+## ETAP 10 — AuditLog i prywatność
+
+### 10.1. Loguj zdarzenia
+- Edycje czasu (pracownik), zakończenie przez managera, przypisania zmian, podpis raportu, cofnięcie podpisu, generacje raportów, CRUD kategorii, zaproszenia.
+
+### 10.2. Usuwanie/opuszczanie
+- Manager może usunąć pracownika z restauracji; pracownik może opuścić grafik/restaurację.  
+- Zachowaj historię (ID pracownika), bez kasowania wpisów raportowych.
+
+### 10.3. TESTY
+- E2E: audyt zapisuje się i jest widoczny dla Admin/Owner (read-only).
+
+──────────────────────────────────────────────────────────────────────────────
+
+## ETAP 11 — CI/CD i jakość
+
+### 11.1. GitHub Actions (prosto)
+- PR: `pnpm i`, `pnpm lint`, `pnpm test`.  
+- main: `pnpm i`, `pnpm test`, (opcjonalnie) deploy.
+
+### 11.2. Lint/Format
+- ESLint + TS strict, Prettier.
+
+### 11.3. TESTY
+- PR blokuje merge przy błędach.
+
+──────────────────────────────────────────────────────────────────────────────
+
+## ETAP 12 — API (skrót, bez e-mail)
+
+### 12.1. Zaproszenia
+- `POST /api/invites/owner-to-manager` (owner)  
+- `POST /api/invites/manager-to-employee` (manager)  
+- `POST /api/invites/accept` (public) — tworzy AppUser + Membership (rola/kontekst)
+
+### 12.2. Grafiki i zmiany
+- `POST /api/schedules` (manager) — tworzy kategorię  
+- `POST /api/shifts` / `PATCH /api/shifts/:id` — walidacja braku nakładania  
+- `POST /api/shifts/:id/assign` — przypisuje pracownika (sprawdza konflikty)
+
+### 12.3. Czas pracy
+- `POST /api/time/start` / `POST /api/time/stop` (pracownik)  
+- `PATCH /api/time/:id` (pracownik, przed podpisem)  
+- `POST /api/time/:id/close-by-manager` (manager)
+
+### 12.4. Raporty
+- `POST /api/reports/daily/:date/generate` (manager)  
+- `POST /api/reports/daily/:date/sign` (manager)  
+- `POST /api/reports/daily/:date/unsign` (manager/owner)  
+- `POST /api/reports/weekly/generate` (cron/UI)  
+- `POST /api/reports/monthly/generate` (cron/UI)  
+- `GET /api/reports/*/download/:id` (owner/manager – uprawnienia)
+
+──────────────────────────────────────────────────────────────────────────────
+
+## ETAP 13 — Eksport i Storage
+
+### 13.1. Pliki
+- **XLSX (domyślny)** + CSV (opcjonalnie).  
+- Supabase Storage (bucket `exports/`), signed URL (7 dni), retencja 3 lata.
+
+### 13.2. TESTY
+- Generacja, pobieranie, uprawnienia, retencja (symulacja czasu).
+
+──────────────────────────────────────────────────────────────────────────────
+
+## ETAP 14 — Seed i dokumentacja
+
+- Seed danych demo (firma→restauracje→kategorie→użytkownicy→zmiany).  
+- README: jak uruchomić, jak skonfigurować CRON w Supabase, jak działa retencja.
+
+──────────────────────────────────────────────────────────────────────────────
+
+## Checkpoint po każdym ETAPIE (obowiązkowo):
+1) Uruchom testy unit/E2E.  
+2) Jeśli coś nie działa: wypisz błąd, popraw implementację, uruchom testy jeszcze raz.  
+3) Dopiero gdy zielono — commit i przejdź do kolejnego etapu.
+
+# KONIEC

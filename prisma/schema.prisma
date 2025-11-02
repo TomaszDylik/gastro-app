@@ -35,7 +35,8 @@ model Membership {
   userId       String
   restaurantId String
   role         Role
-  hourlyRatePLN Decimal?  @db.Decimal(10,2)
+  hourlyRateEmployee Decimal?  @db.Decimal(10,2)  // Rate when working as employee
+  hourlyRateManager  Decimal?  @db.Decimal(10,2)  // Rate when working as manager
   status       Status     @default(pending)
   createdAt    DateTime   @default(now())
 

@@ -133,7 +133,7 @@ async function main() {
       restaurantId: restaurant.id,
       role: 'employee',
       status: 'active',
-      hourlyRatePLN: '35.00'
+      hourlyRateEmployee: '35.00'
     }
   })
 
@@ -143,7 +143,7 @@ async function main() {
       restaurantId: restaurant.id,
       role: 'employee',
       status: 'active',
-      hourlyRatePLN: '40.00'
+      hourlyRateEmployee: '40.00'
     }
   })
 

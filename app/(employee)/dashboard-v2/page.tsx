@@ -1,5 +1,11 @@
 /**
- * Futurystyczny Employee Dashboard - Z INTEGRACJĄ API
+ * Futurystyczny Employee Dashboard
+ * Features:
+ * - Giant animated clock
+ * - Real-time work tracking
+ * - Today's shift timeline
+ * - Quick actions with glassmorphism
+ * - Stats cards with neon effects
  */
 
 'use client'
@@ -10,44 +16,22 @@ import { pl } from 'date-fns/locale'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { Card, CardBody } from '@/components/ui/Card'
-import { Badge } from '@/components/ui/Badge'
-
-interface UserData {
-  id: string
-  name: string
-  email: string
-  role: string
-}
+import { colors } from '@/lib/design-system'
 
 interface WorkSession {
   isWorking: boolean
   clockIn: Date | null
   elapsedMinutes: number
-  timeEntryId?: string
 }
 
-interface TodayShift {
-  id: string
-  start: string
-  end: string
-  roleTag: string | null
-}
-
-export default function DashboardPage() {
+export default function EmployeeDashboardV2() {
   const router = useRouter()
-  const [loading, setLoading] = useState(true)
-  const [userData, setUserData] = useState<UserData | null>(null)
-  const [todayShift, setTodayShift] = useState<TodayShift | null>(null)
   const [session, setSession] = useState<WorkSession>({
     isWorking: false,
     clockIn: null,
     elapsedMinutes: 0,
   })
   const [currentTime, setCurrentTime] = useState(new Date())
-
-  useEffect(() => {
-    loadUserData()
-  }, [])
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -63,106 +47,20 @@ export default function DashboardPage() {
     return () => clearInterval(timer)
   }, [session.isWorking, session.clockIn])
 
-  const loadUserData = async () => {
-    try {
-      const res = await fetch('/api/auth/me')
-      if (!res.ok) {
-        router.push('/login')
-        return
-      }
-      
-      const user = await res.json()
-      
-      if (user.role === 'manager') {
-        router.push('/manager/dashboard')
-        return
-      }
-      if (user.role === 'owner') {
-        router.push('/owner/dashboard')
-        return
-      }
-      
-      setUserData(user)
-      
-      // Mock shift - później dodamy prawdziwe API
-      const today = new Date()
-      setTodayShift({
-        id: '1',
-        start: new Date(today.setHours(9, 0, 0)).toISOString(),
-        end: new Date(today.setHours(17, 0, 0)).toISOString(),
-        roleTag: 'Kelnerka',
-      })
-      
-    } catch (error) {
-      console.error('Error loading user:', error)
-      router.push('/login')
-    } finally {
-      setLoading(false)
-    }
+  const handleClockIn = () => {
+    setSession({
+      isWorking: true,
+      clockIn: new Date(),
+      elapsedMinutes: 0,
+    })
   }
 
-  const handleClockIn = async () => {
-    try {
-      const res = await fetch('/api/time-entries/clock-in', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          scheduleId: todayShift?.id || 'mock-schedule',
-        }),
-      })
-      
-      if (!res.ok) throw new Error('Clock in failed')
-      
-      const data = await res.json()
-      
-      setSession({
-        isWorking: true,
-        clockIn: new Date(data.clockIn),
-        elapsedMinutes: 0,
-        timeEntryId: data.id,
-      })
-    } catch (error) {
-      console.error('Clock in error:', error)
-      alert('❌ Nie udało się rozpocząć pracy')
-    }
-  }
-
-  const handleClockOut = async () => {
-    if (!session.timeEntryId) return
-    
-    try {
-      const res = await fetch('/api/time-entries/clock-out', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          timeEntryId: session.timeEntryId,
-        }),
-      })
-      
-      if (!res.ok) throw new Error('Clock out failed')
-      
-      setSession({
-        isWorking: false,
-        clockIn: null,
-        elapsedMinutes: 0,
-      })
-      
-      alert('✅ Zakończono pracę! Oczekuje na zatwierdzenie managera.')
-    } catch (error) {
-      console.error('Clock out error:', error)
-      alert('❌ Nie udało się zakończyć pracy')
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="h-16 w-16 animate-spin rounded-full border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-lg text-gray-600">Ładowanie...</p>
-        </div>
-      </div>
-    )
+  const handleClockOut = () => {
+    setSession({
+      isWorking: false,
+      clockIn: null,
+      elapsedMinutes: 0,
+    })
   }
 
   const formatElapsedTime = (minutes: number) => {
@@ -178,7 +76,7 @@ export default function DashboardPage() {
         {/* Header */}
         <div className="text-center">
           <h1 className="mb-2 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-4xl font-bold text-transparent md:text-5xl">
-            Cześć, {userData?.name?.split(' ')[0] || 'Pracowniku'}! 👋
+            Cześć, Anna! 👋
           </h1>
           <p className="text-lg text-gray-600">
             {format(currentTime, 'EEEE, d MMMM yyyy', { locale: pl })}
@@ -260,52 +158,49 @@ export default function DashboardPage() {
         </div>
 
         {/* Today's Shift */}
-        {/* Today's Shift */}
         <Card variant="glass">
           <CardBody>
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-xl font-semibold">📅 Dzisiejsza zmiana</h3>
-              <Badge variant="employee">{todayShift?.roleTag || 'Brak zmiany'}</Badge>
+              <span className="rounded-full bg-blue-100 px-4 py-1 text-sm font-semibold text-blue-800">
+                Kelnerka
+              </span>
             </div>
 
-            {todayShift ? (
-              <>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-4">
-                    <span className="text-2xl">🕐</span>
-                    <div>
-                      <div className="text-sm text-gray-500">Start</div>
-                      <div className="text-lg font-semibold">{format(new Date(todayShift.start), 'HH:mm')}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span className="text-2xl">🕔</span>
-                    <div>
-                      <div className="text-sm text-gray-500">Koniec</div>
-                      <div className="text-lg font-semibold">{format(new Date(todayShift.end), 'HH:mm')}</div>
-                    </div>
-                  </div>
+            <div className="space-y-3">
+              <div className="flex items-center gap-4">
+                <span className="text-2xl">🕐</span>
+                <div>
+                  <div className="text-sm text-gray-500">Start</div>
+                  <div className="text-lg font-semibold">09:00</div>
                 </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="text-2xl">🕔</span>
+                <div>
+                  <div className="text-sm text-gray-500">Koniec</div>
+                  <div className="text-lg font-semibold">17:00</div>
+                </div>
+              </div>
+            </div>
 
-                {/* Timeline progress */}
-                <div className="mt-6">
-                  <div className="mb-2 flex justify-between text-sm text-gray-600">
-                    <span>Postęp zmiany</span>
-                    <span>50%</span>
-                  </div>
-                  <div className="h-3 overflow-hidden rounded-full bg-gray-200">
-                    <div
-                      className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 transition-all duration-500"
-                      style={{ width: '50%' }}
-                    />
-                  </div>
-                </div>
-              </>
-            ) : (
-              <p className="text-center text-gray-500 py-4">Brak zaplanowanej zmiany na dziś</p>
-            )}
+            {/* Timeline progress */}
+            <div className="mt-6">
+              <div className="mb-2 flex justify-between text-sm text-gray-600">
+                <span>Postęp zmiany</span>
+                <span>50%</span>
+              </div>
+              <div className="h-3 overflow-hidden rounded-full bg-gray-200">
+                <div
+                  className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 transition-all duration-500"
+                  style={{ width: '50%' }}
+                />
+              </div>
+            </div>
           </CardBody>
-        </Card>        {/* Quick Actions Grid */}
+        </Card>
+
+        {/* Quick Actions Grid */}
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           <Card variant="glass" hover className="cursor-pointer">
             <CardBody className="text-center">

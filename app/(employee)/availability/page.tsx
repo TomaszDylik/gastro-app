@@ -1,8 +1,227 @@
+'use client'
+
+import { useState } from 'react'
+import { Card, CardBody, CardHeader } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
+import { Badge } from '@/components/ui/Badge'
+
+type TimeSlot = 'morning' | 'afternoon' | 'evening'
+type DayOfWeek = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
+
+interface Availability {
+  [key: string]: {
+    [key in TimeSlot]: boolean
+  }
+}
+
 export default function AvailabilityPage() {
+  const [availability, setAvailability] = useState<Availability>({
+    mon: { morning: true, afternoon: true, evening: false },
+    tue: { morning: true, afternoon: true, evening: true },
+    wed: { morning: false, afternoon: true, evening: true },
+    thu: { morning: true, afternoon: false, evening: true },
+    fri: { morning: true, afternoon: true, evening: true },
+    sat: { morning: false, afternoon: true, evening: true },
+    sun: { morning: false, afternoon: false, evening: false },
+  })
+
+  const days = [
+    { key: 'mon', label: 'Poniedziałek' },
+    { key: 'tue', label: 'Wtorek' },
+    { key: 'wed', label: 'Środa' },
+    { key: 'thu', label: 'Czwartek' },
+    { key: 'fri', label: 'Piątek' },
+    { key: 'sat', label: 'Sobota' },
+    { key: 'sun', label: 'Niedziela' },
+  ]
+
+  const timeSlots: { key: TimeSlot; label: string; time: string }[] = [
+    { key: 'morning', label: 'Rano', time: '06:00-14:00' },
+    { key: 'afternoon', label: 'Popołudnie', time: '14:00-22:00' },
+    { key: 'evening', label: 'Wieczór', time: '18:00-02:00' },
+  ]
+
+  const toggleAvailability = (day: DayOfWeek, slot: TimeSlot) => {
+    setAvailability(prev => ({
+      ...prev,
+      [day]: {
+        ...prev[day],
+        [slot]: !prev[day][slot]
+      }
+    }))
+  }
+
+  const setAllDay = (day: DayOfWeek, available: boolean) => {
+    setAvailability(prev => ({
+      ...prev,
+      [day]: {
+        morning: available,
+        afternoon: available,
+        evening: available
+      }
+    }))
+  }
+
+  const handleSave = () => {
+    console.log('Zapisywanie dostępności:', availability)
+    alert('Dostępność zapisana!')
+  }
+
+  const getTotalAvailableSlots = () => {
+    let count = 0
+    Object.values(availability).forEach(day => {
+      Object.values(day).forEach(slot => {
+        if (slot) count++
+      })
+    })
+    return count
+  }
+
   return (
-    <main className="container mx-auto p-4">
-      <h1 className="mb-2 text-xl font-semibold">Availability</h1>
-      <p className="text-gray-600">Widok pracownika — placeholder.</p>
-    </main>
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-4 md:p-8">
+      <div className="mx-auto max-w-6xl space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="mb-2 bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-4xl font-bold text-transparent">
+              Dostępność 📋
+            </h1>
+            <p className="text-gray-600">Zadeklaruj swoją dostępność do pracy</p>
+          </div>
+          <Button variant="primary" onClick={handleSave}>
+            💾 Zapisz dostępność
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <Card variant="gradient">
+            <CardBody className="text-center">
+              <div className="text-4xl mb-2">✅</div>
+              <div className="text-3xl font-bold text-gray-900 mb-1">
+                {getTotalAvailableSlots()}
+              </div>
+              <div className="text-sm text-gray-600">Dostępnych slotów</div>
+            </CardBody>
+          </Card>
+
+          <Card variant="gradient">
+            <CardBody className="text-center">
+              <div className="text-4xl mb-2">📅</div>
+              <div className="text-3xl font-bold text-gray-900 mb-1">
+                {Object.values(availability).filter(day => day.morning || day.afternoon || day.evening).length}
+              </div>
+              <div className="text-sm text-gray-600">Dostępnych dni</div>
+            </CardBody>
+          </Card>
+
+          <Card variant="gradient">
+            <CardBody className="text-center">
+              <div className="text-4xl mb-2">⏰</div>
+              <div className="text-3xl font-bold text-gray-900 mb-1">
+                {Math.round((getTotalAvailableSlots() / 21) * 100)}%
+              </div>
+              <div className="text-sm text-gray-600">Dostępności</div>
+            </CardBody>
+          </Card>
+        </div>
+
+        <Card variant="glass">
+          <CardHeader>
+            <h2 className="text-2xl font-bold">🗓️ Tygodniowy harmonogram</h2>
+          </CardHeader>
+          <CardBody>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="p-4 text-left font-bold text-gray-900">Dzień</th>
+                    {timeSlots.map(slot => (
+                      <th key={slot.key} className="p-4 text-center">
+                        <div className="font-bold text-gray-900">{slot.label}</div>
+                        <div className="text-xs text-gray-500 font-normal">{slot.time}</div>
+                      </th>
+                    ))}
+                    <th className="p-4 text-center font-bold text-gray-900">Akcje</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {days.map(day => (
+                    <tr key={day.key} className="border-b border-gray-100 hover:bg-white/40">
+                      <td className="p-4 font-medium text-gray-900">{day.label}</td>
+                      {timeSlots.map(slot => (
+                        <td key={slot.key} className="p-4 text-center">
+                          <button
+                            onClick={() => toggleAvailability(day.key as DayOfWeek, slot.key)}
+                            className={`h-12 w-12 rounded-xl font-bold shadow-lg transition-all ${
+                              availability[day.key][slot.key]
+                                ? 'bg-gradient-to-br from-green-500 to-emerald-500 text-white hover:shadow-xl scale-105'
+                                : 'bg-gray-200 text-gray-400 hover:bg-gray-300'
+                            }`}
+                          >
+                            {availability[day.key][slot.key] ? '✓' : '✗'}
+                          </button>
+                        </td>
+                      ))}
+                      <td className="p-4 text-center space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setAllDay(day.key as DayOfWeek, true)}
+                        >
+                          Wszystkie
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setAllDay(day.key as DayOfWeek, false)}
+                        >
+                          Żadne
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardBody>
+        </Card>
+
+        <Card variant="glass">
+          <CardHeader>
+            <h2 className="text-2xl font-bold">💡 Podpowiedzi</h2>
+          </CardHeader>
+          <CardBody>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 rounded-xl bg-blue-50 p-4">
+                <div className="text-2xl">ℹ️</div>
+                <div>
+                  <div className="font-bold text-gray-900">Aktualizuj regularnie</div>
+                  <div className="text-sm text-gray-600">
+                    Pamiętaj o aktualizacji swojej dostępności, gdy zmienią się Twoje plany
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 rounded-xl bg-green-50 p-4">
+                <div className="text-2xl">✅</div>
+                <div>
+                  <div className="font-bold text-gray-900">Elastyczność</div>
+                  <div className="text-sm text-gray-600">
+                    Im bardziej elastyczna dostępność, tym łatwiej zostaniesz uwzględniony w grafiku
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 rounded-xl bg-yellow-50 p-4">
+                <div className="text-2xl">⏰</div>
+                <div>
+                  <div className="font-bold text-gray-900">Zmiana dostępności</div>
+                  <div className="text-sm text-gray-600">
+                    Zmiany dostępności najlepiej zgłaszać co najmniej 7 dni przed planowanym terminem
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+    </div>
   )
 }

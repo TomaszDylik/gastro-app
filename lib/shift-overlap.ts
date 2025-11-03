@@ -1,6 +1,6 @@
 /**
  * Shift Overlap Validation
- * 
+ *
  * Detects time conflicts between shifts to prevent double-booking employees.
  */
 
@@ -25,7 +25,7 @@ export interface ValidationResult {
 
 /**
  * Check if two time ranges overlap
- * 
+ *
  * @param a First time slot
  * @param b Second time slot
  * @returns True if the time slots overlap
@@ -38,7 +38,7 @@ function doTimeSlotsOverlap(a: ShiftTimeSlot, b: ShiftTimeSlot): boolean {
 
 /**
  * Calculate overlap details between two time slots
- * 
+ *
  * @param a First time slot
  * @param b Second time slot
  * @returns Overlap details or null if no overlap
@@ -59,13 +59,13 @@ function calculateOverlap(
   return {
     start: overlapStart,
     end: overlapEnd,
-    minutes: overlapMinutes
+    minutes: overlapMinutes,
   }
 }
 
 /**
  * Validate that a new shift doesn't overlap with existing shifts for the same employee
- * 
+ *
  * @param newShift The shift to validate
  * @param existingShifts Array of existing shifts for the same employee
  * @returns Validation result with conflict details
@@ -83,34 +83,35 @@ export function validateNoOverlap(
     }
 
     const overlap = calculateOverlap(newShift, existing)
-    
+
     if (overlap) {
       conflicts.push({
         conflictingShiftId: existing.id || 'unknown',
         overlapStart: overlap.start,
         overlapEnd: overlap.end,
-        overlapMinutes: overlap.minutes
+        overlapMinutes: overlap.minutes,
       })
     }
   }
 
   return {
     hasOverlap: conflicts.length > 0,
-    conflicts
+    conflicts,
   }
 }
 
 /**
  * Format overlap conflict for display
- * 
+ *
  * @param conflict The overlap conflict to format
  * @returns Human-readable description
  */
 export function formatOverlapConflict(conflict: OverlapConflict): string {
-  const formatTime = (date: Date) => date.toLocaleTimeString('pl-PL', {
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+  const formatTime = (date: Date) =>
+    date.toLocaleTimeString('pl-PL', {
+      hour: '2-digit',
+      minute: '2-digit',
+    })
 
   return `Conflict with shift ${conflict.conflictingShiftId}: ${formatTime(conflict.overlapStart)} - ${formatTime(conflict.overlapEnd)} (${conflict.overlapMinutes} minutes)`
 }

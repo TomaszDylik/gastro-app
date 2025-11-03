@@ -7,14 +7,14 @@ const prisma = new PrismaClient()
 
 /**
  * PATCH /api/time-entries/[id]
- * 
+ *
  * Edit a TimeEntry (update clockIn, clockOut, reason, adjustmentMinutes).
- * 
+ *
  * Permissions:
  * - Worker can edit their own TimeEntry ONLY if ReportDaily not signed
  * - Manager can edit any TimeEntry ONLY if ReportDaily not signed
  * - After signature: immutable
- * 
+ *
  * Body:
  * - clockIn?: string (ISO8601)
  * - clockOut?: string (ISO8601)
@@ -23,10 +23,7 @@ const prisma = new PrismaClient()
  * - userId: string (required - ID of user making the edit)
  * - userRole: 'employee' | 'manager' | 'owner' (required)
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const timeEntryId = params.id
     const body = await request.json()
@@ -34,15 +31,12 @@ export async function PATCH(
 
     // Validation
     if (!userId || !userRole) {
-      return NextResponse.json(
-        { error: 'userId and userRole are required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'userId and userRole are required' }, { status: 400 })
     }
 
     // Check permissions
     const permissionCheck = await canEditTimeEntry(timeEntryId, userId, userRole)
-    
+
     if (!permissionCheck.canEdit) {
       return NextResponse.json(
         { error: permissionCheck.reason || 'Cannot edit this TimeEntry' },
@@ -52,11 +46,11 @@ export async function PATCH(
 
     // Build update data
     const updateData: any = {}
-    
+
     if (clockIn !== undefined) {
       updateData.clockIn = new Date(clockIn)
     }
-    
+
     if (clockOut !== undefined) {
       if (clockOut === null) {
         updateData.clockOut = null
@@ -64,37 +58,30 @@ export async function PATCH(
         updateData.clockOut = new Date(clockOut)
       }
     }
-    
+
     if (reason !== undefined) {
       updateData.reason = reason
     }
-    
+
     if (adjustmentMinutes !== undefined) {
       updateData.adjustmentMinutes = adjustmentMinutes
     }
 
     // Validate clockIn < clockOut if both present
     const timeEntry = await prisma.timeEntry.findUnique({
-      where: { id: timeEntryId }
+      where: { id: timeEntryId },
     })
 
     if (!timeEntry) {
-      return NextResponse.json(
-        { error: 'TimeEntry not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'TimeEntry not found' }, { status: 404 })
     }
 
     const finalClockIn = updateData.clockIn || timeEntry.clockIn
-    const finalClockOut = updateData.clockOut !== undefined 
-      ? updateData.clockOut 
-      : timeEntry.clockOut
+    const finalClockOut =
+      updateData.clockOut !== undefined ? updateData.clockOut : timeEntry.clockOut
 
     if (finalClockOut && finalClockOut <= finalClockIn) {
-      return NextResponse.json(
-        { error: 'clockOut must be after clockIn' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'clockOut must be after clockIn' }, { status: 400 })
     }
 
     // Update TimeEntry
@@ -103,10 +90,10 @@ export async function PATCH(
       data: updateData,
       include: {
         membership: {
-          include: { user: true, restaurant: true }
+          include: { user: true, restaurant: true },
         },
-        schedule: true
-      }
+        schedule: true,
+      },
     })
 
     // Log the edit to audit
@@ -133,14 +120,10 @@ export async function PATCH(
 
     return NextResponse.json({
       success: true,
-      timeEntry: updatedTimeEntry
+      timeEntry: updatedTimeEntry,
     })
-
   } catch (error) {
     console.error('❌ TimeEntry edit error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

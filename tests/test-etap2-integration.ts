@@ -17,17 +17,17 @@ async function testEffectiveRateWithDatabase() {
       where: {
         memberships: {
           some: {
-            role: 'employee'
-          }
-        }
+            role: 'employee',
+          },
+        },
       },
       include: {
         memberships: {
           include: {
-            restaurant: true
-          }
-        }
-      }
+            restaurant: true,
+          },
+        },
+      },
     })
 
     if (employee && employee.memberships.length > 0) {
@@ -36,7 +36,7 @@ async function testEffectiveRateWithDatabase() {
         userDefaultRate: employee.hourlyRateDefaultPLN,
         membershipManagerRate: membership.hourlyRateManagerPLN,
         membershipRole: membership.role,
-        workingAsManager: false
+        workingAsManager: false,
       })
       console.log(`  User: ${employee.name}`)
       console.log(`  Default rate: ${employee.hourlyRateDefaultPLN?.toString() || 'null'} PLN`)
@@ -53,17 +53,17 @@ async function testEffectiveRateWithDatabase() {
       where: {
         memberships: {
           some: {
-            role: 'manager'
-          }
-        }
+            role: 'manager',
+          },
+        },
       },
       include: {
         memberships: {
           where: {
-            role: 'manager'
-          }
-        }
-      }
+            role: 'manager',
+          },
+        },
+      },
     })
 
     if (manager && manager.memberships.length > 0) {
@@ -72,18 +72,24 @@ async function testEffectiveRateWithDatabase() {
         userDefaultRate: manager.hourlyRateDefaultPLN,
         membershipManagerRate: membership.hourlyRateManagerPLN,
         membershipRole: membership.role,
-        workingAsManager: true
+        workingAsManager: true,
       })
       console.log(`  User: ${manager.name}`)
       console.log(`  Default rate: ${manager.hourlyRateDefaultPLN?.toString() || 'null'} PLN`)
       console.log(`  Manager rate: ${membership.hourlyRateManagerPLN?.toString() || 'null'} PLN`)
       console.log(`  Calculated rate (as manager): ${rateAsManager} PLN`)
-      
+
       if (membership.hourlyRateManagerPLN) {
-        console.assert(rateAsManager === Number(membership.hourlyRateManagerPLN), 'Should use manager rate')
+        console.assert(
+          rateAsManager === Number(membership.hourlyRateManagerPLN),
+          'Should use manager rate'
+        )
         console.log('  ✅ PASSED (using manager rate)\n')
       } else {
-        console.assert(rateAsManager === Number(manager.hourlyRateDefaultPLN || 0), 'Should use default rate')
+        console.assert(
+          rateAsManager === Number(manager.hourlyRateDefaultPLN || 0),
+          'Should use default rate'
+        )
         console.log('  ✅ PASSED (using default rate - no manager rate set)\n')
       }
     } else {
@@ -98,11 +104,14 @@ async function testEffectiveRateWithDatabase() {
         userDefaultRate: manager.hourlyRateDefaultPLN,
         membershipManagerRate: membership.hourlyRateManagerPLN,
         membershipRole: membership.role,
-        workingAsManager: false
+        workingAsManager: false,
       })
       console.log(`  User: ${manager.name}`)
       console.log(`  Calculated rate (as employee): ${rateAsEmployee} PLN`)
-      console.assert(rateAsEmployee === Number(manager.hourlyRateDefaultPLN || 0), 'Should use default rate when working as employee')
+      console.assert(
+        rateAsEmployee === Number(manager.hourlyRateDefaultPLN || 0),
+        'Should use default rate when working as employee'
+      )
       console.log('  ✅ PASSED\n')
     }
 
@@ -112,35 +121,37 @@ async function testEffectiveRateWithDatabase() {
       include: {
         memberships: {
           include: {
-            restaurant: true
-          }
-        }
-      }
+            restaurant: true,
+          },
+        },
+      },
     })
 
     console.log(`  Total users in database: ${allUsers.length}`)
-    allUsers.forEach(user => {
+    allUsers.forEach((user) => {
       console.log(`\n  👤 ${user.name || 'Unnamed'}`)
       console.log(`     Email: ${user.email || 'N/A'}`)
       console.log(`     Default rate: ${user.hourlyRateDefaultPLN?.toString() || 'null'} PLN`)
-      
-      user.memberships.forEach(m => {
-        console.log(`     └─ ${m.restaurant.name}: ${m.role} (manager rate: ${m.hourlyRateManagerPLN?.toString() || 'null'} PLN)`)
-        
+
+      user.memberships.forEach((m) => {
+        console.log(
+          `     └─ ${m.restaurant.name}: ${m.role} (manager rate: ${m.hourlyRateManagerPLN?.toString() || 'null'} PLN)`
+        )
+
         const asEmployee = effectiveHourlyRate({
           userDefaultRate: user.hourlyRateDefaultPLN,
           membershipManagerRate: m.hourlyRateManagerPLN,
           membershipRole: m.role,
-          workingAsManager: false
+          workingAsManager: false,
         })
-        
+
         const asManager = effectiveHourlyRate({
           userDefaultRate: user.hourlyRateDefaultPLN,
           membershipManagerRate: m.hourlyRateManagerPLN,
           membershipRole: m.role,
-          workingAsManager: true
+          workingAsManager: true,
         })
-        
+
         console.log(`        → As employee: ${asEmployee} PLN`)
         console.log(`        → As manager: ${asManager} PLN`)
       })
@@ -148,7 +159,6 @@ async function testEffectiveRateWithDatabase() {
     console.log('\n  ✅ All calculations completed\n')
 
     console.log('✅ All integration tests passed!')
-
   } catch (error) {
     console.error('❌ Test error:', error)
   } finally {

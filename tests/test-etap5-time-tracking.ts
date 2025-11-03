@@ -1,6 +1,6 @@
 /**
  * ETAP 5: Start/Stop Time Tracking + Edit Permissions
- * 
+ *
  * Integration tests for:
  * - Clock-in/clock-out functionality
  * - Worker can edit TimeEntry before ReportDaily signature
@@ -41,7 +41,7 @@ async function runTests() {
     console.log('\n📋 SETUP: Loading test data...\n')
 
     const restaurant = await prisma.restaurant.findFirst({
-      where: { name: 'Pod Gruszą' }
+      where: { name: 'Pod Gruszą' },
     })
 
     if (!restaurant) {
@@ -52,18 +52,18 @@ async function runTests() {
       where: { email: 'manager@gmail.pl' },
       include: {
         memberships: {
-          where: { restaurantId: restaurant.id }
-        }
-      }
+          where: { restaurantId: restaurant.id },
+        },
+      },
     })
 
     const employee1 = await prisma.appUser.findFirst({
       where: { email: 'employee1@gmail.pl' },
       include: {
         memberships: {
-          where: { restaurantId: restaurant.id }
-        }
-      }
+          where: { restaurantId: restaurant.id },
+        },
+      },
     })
 
     if (!manager || !employee1) {
@@ -79,7 +79,7 @@ async function runTests() {
 
     // Get or create a schedule
     let schedule = await prisma.schedule.findFirst({
-      where: { restaurantId: restaurant.id }
+      where: { restaurantId: restaurant.id },
     })
 
     if (!schedule) {
@@ -87,8 +87,8 @@ async function runTests() {
         data: {
           name: 'Test Schedule',
           restaurantId: restaurant.id,
-          isActive: true
-        }
+          isActive: true,
+        },
       })
     }
 
@@ -115,8 +115,8 @@ async function runTests() {
         clockIn: clockInTime,
         source: 'manual',
         status: 'active',
-        reason: 'Regular shift'
-      }
+        reason: 'Regular shift',
+      },
     })
 
     if (timeEntry1 && timeEntry1.clockIn && !timeEntry1.clockOut) {
@@ -136,8 +136,8 @@ async function runTests() {
       where: {
         membershipId: employee1Membership.id,
         scheduleId: schedule.id,
-        clockOut: null
-      }
+        clockOut: null,
+      },
     })
 
     if (openTimeEntry) {
@@ -159,16 +159,16 @@ async function runTests() {
     const updatedTimeEntry = await prisma.timeEntry.update({
       where: { id: timeEntry1.id },
       data: {
-        clockOut: clockOutTime
-      }
+        clockOut: clockOutTime,
+      },
     })
 
     if (updatedTimeEntry.clockOut) {
       const durationMs = updatedTimeEntry.clockOut.getTime() - updatedTimeEntry.clockIn.getTime()
       const durationHours = durationMs / (1000 * 60 * 60)
-      
+
       console.log(`   Duration: ${durationHours} hours`)
-      
+
       if (durationHours === 8) {
         logSuccess('Clock-out updated TimeEntry correctly (8h shift)')
       } else {
@@ -189,8 +189,8 @@ async function runTests() {
       where: {
         membershipId: employee1Membership.id,
         scheduleId: schedule.id,
-        clockOut: null
-      }
+        clockOut: null,
+      },
     })
 
     if (!noOpenEntry) {
@@ -214,17 +214,17 @@ async function runTests() {
     await prisma.reportDaily.deleteMany({
       where: {
         restaurantId: restaurant.id,
-        date: entryDate
-      }
+        date: entryDate,
+      },
     })
 
     const reportDaily = await prisma.reportDaily.findUnique({
       where: {
         restaurantId_date: {
           restaurantId: restaurant.id,
-          date: entryDate
-        }
-      }
+          date: entryDate,
+        },
+      },
     })
 
     const canEdit = !reportDaily || !reportDaily.signedAt
@@ -234,8 +234,8 @@ async function runTests() {
       const editedEntry = await prisma.timeEntry.update({
         where: { id: timeEntry1.id },
         data: {
-          reason: 'Updated reason - forgot to clock in on time'
-        }
+          reason: 'Updated reason - forgot to clock in on time',
+        },
       })
 
       if (editedEntry.reason === 'Updated reason - forgot to clock in on time') {
@@ -254,24 +254,26 @@ async function runTests() {
     console.log('TEST 6: Create and sign ReportDaily')
     console.log('='.repeat(60))
 
-    const signatureLog = [{
-      action: 'signed',
-      userId: manager.id,
-      userName: manager.name || manager.email || 'Manager',
-      timestamp: new Date().toISOString()
-    }]
+    const signatureLog = [
+      {
+        action: 'signed',
+        userId: manager.id,
+        userName: manager.name || manager.email || 'Manager',
+        timestamp: new Date().toISOString(),
+      },
+    ]
 
     const newReport = await prisma.reportDaily.upsert({
       where: {
         restaurantId_date: {
           restaurantId: restaurant.id,
-          date: entryDate
-        }
+          date: entryDate,
+        },
       },
       update: {
         signedByUserId: manager.id,
         signedAt: new Date(),
-        signatureLogJson: signatureLog
+        signatureLogJson: signatureLog,
       },
       create: {
         restaurantId: restaurant.id,
@@ -279,8 +281,8 @@ async function runTests() {
         totalsJson: { hours: 8, amount: 280 },
         signedByUserId: manager.id,
         signedAt: new Date(),
-        signatureLogJson: signatureLog
-      }
+        signatureLogJson: signatureLog,
+      },
     })
 
     if (newReport.signedAt) {
@@ -300,9 +302,9 @@ async function runTests() {
       where: {
         restaurantId_date: {
           restaurantId: restaurant.id,
-          date: entryDate
-        }
-      }
+          date: entryDate,
+        },
+      },
     })
 
     const canEditAfterSign = !reportAfterSign || !reportAfterSign.signedAt
@@ -332,8 +334,8 @@ async function runTests() {
         clockIn: newDate,
         source: 'manual',
         status: 'active',
-        reason: 'Forgot to clock out'
-      }
+        reason: 'Forgot to clock out',
+      },
     })
 
     if (hangingEntry.clockOut === null) {
@@ -345,8 +347,8 @@ async function runTests() {
         where: { id: hangingEntry.id },
         data: {
           clockOut: closedTime,
-          reason: 'Forgot to clock out (Closed by manager)'
-        }
+          reason: 'Forgot to clock out (Closed by manager)',
+        },
       })
 
       if (closedEntry.clockOut) {
@@ -381,13 +383,13 @@ async function runTests() {
         clockIn: invalidClockIn,
         clockOut: invalidClockOut, // Invalid - before clockIn!
         source: 'manual',
-        status: 'active'
-      }
+        status: 'active',
+      },
     })
 
     if (invalidEntry.clockOut! < invalidEntry.clockIn) {
       logSuccess('DB allows invalid times (app validation needed). API would reject with 400.')
-      
+
       // Cleanup invalid entry
       await prisma.timeEntry.delete({ where: { id: invalidEntry.id } })
     } else {
@@ -413,8 +415,8 @@ async function runTests() {
         clockIn: managerEditDate,
         clockOut: new Date(managerEditDate.getTime() + 8 * 60 * 60 * 1000), // +8h
         source: 'manual',
-        status: 'active'
-      }
+        status: 'active',
+      },
     })
 
     // Check if manager can edit (no signature for this date)
@@ -425,9 +427,9 @@ async function runTests() {
       where: {
         restaurantId_date: {
           restaurantId: restaurant.id,
-          date: managerEditDateOnly
-        }
-      }
+          date: managerEditDateOnly,
+        },
+      },
     })
 
     const managerCanEdit = !reportForManagerEdit || !reportForManagerEdit.signedAt
@@ -437,8 +439,8 @@ async function runTests() {
         where: { id: employeeEntry.id },
         data: {
           adjustmentMinutes: 15,
-          reason: 'Adjusted by manager - DST correction'
-        }
+          reason: 'Adjusted by manager - DST correction',
+        },
       })
 
       if (managerEditedEntry.adjustmentMinutes === 15) {
@@ -460,13 +462,12 @@ async function runTests() {
     await prisma.timeEntry.deleteMany({
       where: {
         id: {
-          in: [hangingEntry.id, employeeEntry.id]
-        }
-      }
+          in: [hangingEntry.id, employeeEntry.id],
+        },
+      },
     })
 
     console.log('✅ Cleanup complete')
-
   } catch (error) {
     console.error('\n❌ Test suite error:', error)
     testsFailedCount++
@@ -480,7 +481,9 @@ async function runTests() {
   console.log('='.repeat(60))
   console.log(`✅ Tests Passed: ${testsPassedCount}`)
   console.log(`❌ Tests Failed: ${testsFailedCount}`)
-  console.log(`📈 Success Rate: ${testsPassedCount}/${testsPassedCount + testsFailedCount} (${Math.round(testsPassedCount / (testsPassedCount + testsFailedCount) * 100)}%)`)
+  console.log(
+    `📈 Success Rate: ${testsPassedCount}/${testsPassedCount + testsFailedCount} (${Math.round((testsPassedCount / (testsPassedCount + testsFailedCount)) * 100)}%)`
+  )
   console.log('='.repeat(60) + '\n')
 
   if (testsFailedCount > 0) {
@@ -490,7 +493,7 @@ async function runTests() {
 
 // Run tests
 runTests()
-  .catch(error => {
+  .catch((error) => {
     console.error('Fatal error:', error)
     process.exit(1)
   })

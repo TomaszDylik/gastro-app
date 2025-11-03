@@ -9,34 +9,30 @@ export const dynamic = 'force-dynamic'
 
 /**
  * POST /api/reports/daily
- * 
+ *
  * Generate daily report for a restaurant on a specific date
- * 
+ *
  * Body: { restaurantId, date (YYYY-MM-DD) }
  */
 export async function POST(request: NextRequest) {
   try {
     // 1. Authenticate
     const supabase = createRouteHandlerClient({ cookies })
-    const { data: { session } } = await supabase.auth.getSession()
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
 
     if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // 2. Get user
     const user = await prisma.appUser.findUnique({
-      where: { authUserId: session.user.id }
+      where: { authUserId: session.user.id },
     })
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     // 3. Parse request
@@ -57,9 +53,9 @@ export async function POST(request: NextRequest) {
         restaurantId,
         status: 'active',
         role: {
-          in: ['owner', 'manager', 'super_admin']
-        }
-      }
+          in: ['owner', 'manager', 'super_admin'],
+        },
+      },
     })
 
     if (!membership) {
@@ -75,64 +71,64 @@ export async function POST(request: NextRequest) {
       where: {
         restaurantId_date: {
           restaurantId,
-          date: reportDate
-        }
-      }
+          date: reportDate,
+        },
+      },
     })
 
     if (existing) {
-      return NextResponse.json(
-        { error: 'Report for this date already exists' },
-        { status: 409 }
-      )
+      return NextResponse.json({ error: 'Report for this date already exists' }, { status: 409 })
     }
 
     // 6. Get all time entries for this date
     const startOfDay = new Date(reportDate)
     startOfDay.setHours(0, 0, 0, 0)
-    
+
     const endOfDay = new Date(reportDate)
     endOfDay.setHours(23, 59, 59, 999)
 
     const timeEntries = await prisma.timeEntry.findMany({
       where: {
         membership: {
-          restaurantId
+          restaurantId,
         },
         clockIn: {
           gte: startOfDay,
-          lte: endOfDay
+          lte: endOfDay,
         },
         clockOut: {
-          not: null // Only completed entries
-        }
+          not: null, // Only completed entries
+        },
       },
       include: {
         membership: {
           include: {
-            user: true
-          }
-        }
-      }
+            user: true,
+          },
+        },
+      },
     })
 
     // 7. Calculate totals per employee
-    const totalsMap = new Map<string, {
-      userId: string
-      userName: string
-      membershipId: string
-      role: string
-      totalHours: number
-      hourlyRate: number
-      totalAmount: number
-      entries: number
-    }>()
+    const totalsMap = new Map<
+      string,
+      {
+        userId: string
+        userName: string
+        membershipId: string
+        role: string
+        totalHours: number
+        hourlyRate: number
+        totalAmount: number
+        entries: number
+      }
+    >()
 
     for (const entry of timeEntries) {
       const membership = entry.membership
       const clockIn = entry.clockIn
       const clockOut = entry.clockOut!
-      
+
       // Calculate hours (including adjustment)
       const durationMs = clockOut.getTime() - clockIn.getTime()
       const durationMinutes = Math.floor(durationMs / (1000 * 60)) + (entry.adjustmentMinutes || 0)
@@ -140,7 +136,7 @@ export async function POST(request: NextRequest) {
 
       // Get hourly rate (manager rate if available, else default)
       const hourlyRate = Number(membership.hourlyRateManagerPLN || 0)
-      
+
       const amount = Number((hours * hourlyRate).toFixed(2))
 
       const key = membership.id
@@ -153,7 +149,7 @@ export async function POST(request: NextRequest) {
           totalHours: 0,
           hourlyRate,
           totalAmount: 0,
-          entries: 0
+          entries: 0,
         })
       }
 
@@ -161,7 +157,7 @@ export async function POST(request: NextRequest) {
       existing.totalHours += hours
       existing.totalAmount += amount
       existing.entries += 1
-      
+
       // Round totals
       existing.totalHours = Number(existing.totalHours.toFixed(2))
       existing.totalAmount = Number(existing.totalAmount.toFixed(2))
@@ -176,8 +172,8 @@ export async function POST(request: NextRequest) {
       summary: {
         totalEmployees: totalsArray.length,
         totalHours: Number(totalsArray.reduce((sum, e) => sum + e.totalHours, 0).toFixed(2)),
-        totalAmount: Number(totalsArray.reduce((sum, e) => sum + e.totalAmount, 0).toFixed(2))
-      }
+        totalAmount: Number(totalsArray.reduce((sum, e) => sum + e.totalAmount, 0).toFixed(2)),
+      },
     }
 
     // 9. Create report
@@ -186,27 +182,26 @@ export async function POST(request: NextRequest) {
         restaurantId,
         date: reportDate,
         totalsJson,
-        signatureLogJson: []
-      }
+        signatureLogJson: [],
+      },
     })
 
-    return NextResponse.json({
-      report: {
-        id: report.id,
-        restaurantId: report.restaurantId,
-        date: report.date.toISOString(),
-        totals: totalsJson,
-        signedByUserId: report.signedByUserId,
-        signedAt: report.signedAt
-      }
-    }, { status: 201 })
-
+    return NextResponse.json(
+      {
+        report: {
+          id: report.id,
+          restaurantId: report.restaurantId,
+          date: report.date.toISOString(),
+          totals: totalsJson,
+          signedByUserId: report.signedByUserId,
+          signedAt: report.signedAt,
+        },
+      },
+      { status: 201 }
+    )
   } catch (error) {
     console.error('Error generating daily report:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   } finally {
     await prisma.$disconnect()
   }
@@ -214,32 +209,28 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET /api/reports/daily?restaurantId=xxx&date=YYYY-MM-DD
- * 
+ *
  * Get daily report for a specific date
  */
 export async function GET(request: NextRequest) {
   try {
     // 1. Authenticate
     const supabase = createRouteHandlerClient({ cookies })
-    const { data: { session } } = await supabase.auth.getSession()
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
 
     if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // 2. Get user
     const user = await prisma.appUser.findUnique({
-      where: { authUserId: session.user.id }
+      where: { authUserId: session.user.id },
     })
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     // 3. Parse query params
@@ -259,8 +250,8 @@ export async function GET(request: NextRequest) {
       where: {
         userId: user.id,
         restaurantId,
-        status: 'active'
-      }
+        status: 'active',
+      },
     })
 
     if (!membership) {
@@ -276,16 +267,13 @@ export async function GET(request: NextRequest) {
       where: {
         restaurantId_date: {
           restaurantId,
-          date: reportDate
-        }
-      }
+          date: reportDate,
+        },
+      },
     })
 
     if (!report) {
-      return NextResponse.json(
-        { error: 'Report not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Report not found' }, { status: 404 })
     }
 
     return NextResponse.json({
@@ -296,16 +284,12 @@ export async function GET(request: NextRequest) {
         totals: report.totalsJson,
         signedByUserId: report.signedByUserId,
         signedAt: report.signedAt?.toISOString(),
-        signatureLog: report.signatureLogJson
-      }
+        signatureLog: report.signatureLogJson,
+      },
     })
-
   } catch (error) {
     console.error('Error fetching daily report:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   } finally {
     await prisma.$disconnect()
   }

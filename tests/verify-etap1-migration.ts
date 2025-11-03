@@ -45,7 +45,6 @@ async function verifyDatabase() {
     } catch (e) {
       console.log('❌ ReportDaily table does NOT exist')
     }
-
   } catch (error) {
     console.error('❌ Error:', error)
   } finally {

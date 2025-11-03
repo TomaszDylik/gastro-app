@@ -1,6 +1,6 @@
 /**
  * ETAP 1.2 - Effective Hourly Rate Calculation
- * 
+ *
  * Calculates the effective hourly rate based on:
  * - User's default rate (hourlyRateDefaultPLN)
  * - Membership manager rate (hourlyRateManagerPLN)
@@ -18,12 +18,12 @@ export interface EffectiveRateParams {
 
 /**
  * Calculate effective hourly rate for a user
- * 
+ *
  * Priority:
  * 1. If working as manager AND has manager rate → use manager rate
  * 2. Otherwise use user's default rate
  * 3. Fallback to 0
- * 
+ *
  * @param params - Rate calculation parameters
  * @returns Effective hourly rate in PLN
  */
@@ -32,7 +32,7 @@ export function effectiveHourlyRate(params: EffectiveRateParams): number {
     userDefaultRate,
     membershipManagerRate,
     membershipRole,
-    workingAsManager = false
+    workingAsManager = false,
   } = params
 
   // If working as manager and has manager rate, use it

@@ -13,8 +13,8 @@ export async function middleware(req: NextRequest) {
 
   // Publiczne ścieżki (dostępne bez logowania)
   const publicPaths = ['/login', '/auth/callback', '/invite']
-  const isPublicPath = publicPaths.some(path => req.nextUrl.pathname.startsWith(path))
-  
+  const isPublicPath = publicPaths.some((path) => req.nextUrl.pathname.startsWith(path))
+
   // API routes - nie przekierowuj, zwróć 401
   const isApiRoute = req.nextUrl.pathname.startsWith('/api/')
 

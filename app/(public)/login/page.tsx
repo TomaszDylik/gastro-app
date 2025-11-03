@@ -28,9 +28,9 @@ export default function LoginPage() {
 
       if (error) throw error
       if (!data.user) throw new Error('Nie udało się zalogować')
-      
+
       console.log('✅ Login successful, user:', data.user.email)
-      
+
       // Bezpośrednie przekierowanie - session jest już zapisana przez Supabase
       // Używamy router.push bo session jest już w cookies
       router.push('/dashboard')
@@ -85,68 +85,60 @@ export default function LoginPage() {
 
   return (
     <main className="container mx-auto max-w-md p-6">
-      <h1 className="text-2xl font-bold mb-6 text-center">Gastro Schedules</h1>
-      
-      <div className="bg-white shadow-md rounded-lg p-6">
-        <h2 className="text-xl font-semibold mb-4">Logowanie</h2>
-        
+      <h1 className="mb-6 text-center text-2xl font-bold">Gastro Schedules</h1>
+
+      <div className="rounded-lg bg-white p-6 shadow-md">
+        <h2 className="mb-4 text-xl font-semibold">Logowanie</h2>
+
         {/* Wybór roli */}
-        <div className="mb-6 bg-gray-50 p-4 rounded-lg">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Loguję się jako:
-          </label>
+        <div className="mb-6 rounded-lg bg-gray-50 p-4">
+          <label className="mb-2 block text-sm font-medium text-gray-700">Loguję się jako:</label>
           <div className="flex gap-2">
             <button
               onClick={() => setUserRole('employee')}
-              className={`flex-1 py-2 px-4 rounded ${
+              className={`flex-1 rounded px-4 py-2 ${
                 userRole === 'employee'
                   ? 'bg-blue-600 text-white'
-                  : 'bg-white border border-gray-300 text-gray-700'
+                  : 'border border-gray-300 bg-white text-gray-700'
               }`}
             >
               👤 Pracownik
             </button>
             <button
               onClick={() => setUserRole('manager')}
-              className={`flex-1 py-2 px-4 rounded ${
+              className={`flex-1 rounded px-4 py-2 ${
                 userRole === 'manager'
                   ? 'bg-blue-600 text-white'
-                  : 'bg-white border border-gray-300 text-gray-700'
+                  : 'border border-gray-300 bg-white text-gray-700'
               }`}
             >
               👔 Manager
             </button>
           </div>
         </div>
-        
+
         {/* Przełącznik metody logowania */}
-        <div className="flex gap-2 mb-6">
+        <div className="mb-6 flex gap-2">
           <button
             onClick={() => setLoginMethod('password')}
-            className={`flex-1 py-2 px-4 rounded text-sm ${
-              loginMethod === 'password'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-700'
+            className={`flex-1 rounded px-4 py-2 text-sm ${
+              loginMethod === 'password' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'
             }`}
           >
             🔑 Hasło
           </button>
           <button
             onClick={() => setLoginMethod('email')}
-            className={`flex-1 py-2 px-4 rounded text-sm ${
-              loginMethod === 'email'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-700'
+            className={`flex-1 rounded px-4 py-2 text-sm ${
+              loginMethod === 'email' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'
             }`}
           >
             📧 Link
           </button>
           <button
             onClick={() => setLoginMethod('phone')}
-            className={`flex-1 py-2 px-4 rounded text-sm ${
-              loginMethod === 'phone'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-700'
+            className={`flex-1 rounded px-4 py-2 text-sm ${
+              loginMethod === 'phone' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'
             }`}
           >
             📱 SMS
@@ -157,7 +149,7 @@ export default function LoginPage() {
         {loginMethod === 'password' && (
           <form onSubmit={handlePasswordLogin} className="space-y-4">
             <div>
-              <label htmlFor="email-pwd" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="email-pwd" className="mb-1 block text-sm font-medium text-gray-700">
                 Adres e-mail
               </label>
               <input
@@ -167,11 +159,11 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="twoj@email.com"
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="mb-1 block text-sm font-medium text-gray-700">
                 Hasło
               </label>
               <input
@@ -181,13 +173,13 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? 'Logowanie...' : 'Zaloguj się'}
             </button>
@@ -198,7 +190,7 @@ export default function LoginPage() {
         {loginMethod === 'email' && (
           <form onSubmit={handleEmailLogin} className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="email" className="mb-1 block text-sm font-medium text-gray-700">
                 Adres e-mail
               </label>
               <input
@@ -208,13 +200,13 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="twoj@email.com"
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? 'Wysyłanie...' : 'Wyślij magiczny link'}
             </button>
@@ -225,7 +217,7 @@ export default function LoginPage() {
         {loginMethod === 'phone' && (
           <form onSubmit={handlePhoneLogin} className="space-y-4">
             <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="phone" className="mb-1 block text-sm font-medium text-gray-700">
                 Numer telefonu
               </label>
               <input
@@ -235,14 +227,14 @@ export default function LoginPage() {
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="+48 123 456 789"
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <p className="text-xs text-gray-500 mt-1">Format: +48 (kod kraju wymagany)</p>
+              <p className="mt-1 text-xs text-gray-500">Format: +48 (kod kraju wymagany)</p>
             </div>
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? 'Wysyłanie...' : 'Wyślij kod SMS'}
             </button>
@@ -251,16 +243,18 @@ export default function LoginPage() {
 
         {/* Komunikat */}
         {message && (
-          <div className={`mt-4 p-3 rounded ${
-            message.startsWith('✅') 
-              ? 'bg-green-50 text-green-800 border border-green-200' 
-              : 'bg-red-50 text-red-800 border border-red-200'
-          }`}>
+          <div
+            className={`mt-4 rounded p-3 ${
+              message.startsWith('✅')
+                ? 'border border-green-200 bg-green-50 text-green-800'
+                : 'border border-red-200 bg-red-50 text-red-800'
+            }`}
+          >
             {message}
           </div>
         )}
 
-        <p className="text-xs text-gray-500 mt-6 text-center">
+        <p className="mt-6 text-center text-xs text-gray-500">
           Bezpieczne logowanie przez Supabase Auth
         </p>
       </div>

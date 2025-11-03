@@ -1,6 +1,6 @@
 /**
  * ETAP 8: Export Formats (CSV/XLSX)
- * 
+ *
  * Integration tests for:
  * - Export daily report as CSV
  * - Export daily report as XLSX
@@ -11,7 +11,12 @@
  */
 
 import { PrismaClient } from '@prisma/client'
-import { generateCSV, generateXLSX, formatDailyExport, formatMonthlyExport } from '../lib/export-formats'
+import {
+  generateCSV,
+  generateXLSX,
+  formatDailyExport,
+  formatMonthlyExport,
+} from '../lib/export-formats'
 
 const prisma = new PrismaClient()
 
@@ -43,7 +48,7 @@ async function runTests() {
     console.log('\n📋 SETUP: Loading test data...\n')
 
     const restaurant = await prisma.restaurant.findFirst({
-      where: { name: 'Pod Gruszą' }
+      where: { name: 'Pod Gruszą' },
     })
 
     if (!restaurant) {
@@ -54,18 +59,18 @@ async function runTests() {
       where: { email: 'employee1@gmail.pl' },
       include: {
         memberships: {
-          where: { restaurantId: restaurant.id }
-        }
-      }
+          where: { restaurantId: restaurant.id },
+        },
+      },
     })
 
     const employee2 = await prisma.appUser.findFirst({
       where: { email: 'employee2@gmail.pl' },
       include: {
         memberships: {
-          where: { restaurantId: restaurant.id }
-        }
-      }
+          where: { restaurantId: restaurant.id },
+        },
+      },
     })
 
     if (!employee1 || !employee2) {
@@ -76,7 +81,7 @@ async function runTests() {
     const employee2Membership = employee2.memberships[0]
 
     let schedule = await prisma.schedule.findFirst({
-      where: { restaurantId: restaurant.id }
+      where: { restaurantId: restaurant.id },
     })
 
     if (!schedule) {
@@ -84,8 +89,8 @@ async function runTests() {
         data: {
           name: 'Test Schedule',
           restaurantId: restaurant.id,
-          isActive: true
-        }
+          isActive: true,
+        },
       })
     }
 
@@ -110,37 +115,50 @@ async function runTests() {
         clockOut: new Date(testDate.getTime() + 8 * 60 * 60 * 1000), // +8h
         source: 'manual',
         status: 'active',
-        reason: 'Regular shift'
+        reason: 'Regular shift',
       },
       include: {
         membership: {
           include: {
             user: true,
-            restaurant: true
-          }
-        }
-      }
+            restaurant: true,
+          },
+        },
+      },
     })
 
     const dailyData = formatDailyExport({
-      timeEntries: [testEntry as any]
+      timeEntries: [testEntry as any],
     })
 
     if (dailyData.length === 1) {
       const row = dailyData[0]
       console.log(`   Headers: ${Object.keys(row).join(', ')}`)
-      
+
       const expectedHeaders = [
-        'id_pracownika', 'imie_nazwisko', 'id_restauracji', 'nazwa_restauracji',
-        'data', 'wejscie', 'wyjscie', 'godziny', 'stawka_pln', 'kwota_pln',
-        'zrodlo', 'zatwierdzil', 'zatwierdzone_o', 'uwagi'
+        'id_pracownika',
+        'imie_nazwisko',
+        'id_restauracji',
+        'nazwa_restauracji',
+        'data',
+        'wejscie',
+        'wyjscie',
+        'godziny',
+        'stawka_pln',
+        'kwota_pln',
+        'zrodlo',
+        'zatwierdzil',
+        'zatwierdzone_o',
+        'uwagi',
       ]
-      
-      const hasAllHeaders = expectedHeaders.every(h => h in row)
-      
+
+      const hasAllHeaders = expectedHeaders.every((h) => h in row)
+
       if (hasAllHeaders) {
         logSuccess('Daily export has correct Polish headers')
-        console.log(`   Sample row: ${row.imie_nazwisko}, ${row.data}, ${row.godziny}h, ${row.kwota_pln} PLN`)
+        console.log(
+          `   Sample row: ${row.imie_nazwisko}, ${row.data}, ${row.godziny}h, ${row.kwota_pln} PLN`
+        )
       } else {
         logFailure('Daily export missing some headers')
       }
@@ -198,33 +216,41 @@ async function runTests() {
           userName: employee1.name || 'Employee1',
           totalHours: 160,
           totalAmount: 5600,
-          hourlyRate: 35
+          hourlyRate: 35,
         },
         {
           userId: employee2.id,
           userName: employee2.name || 'Employee2',
           totalHours: 140,
           totalAmount: 5600,
-          hourlyRate: 40
-        }
+          hourlyRate: 40,
+        },
       ],
-      month: 'październik 2025'
+      month: 'październik 2025',
     })
 
     if (monthlyData.length === 2) {
       const row = monthlyData[0]
       console.log(`   Headers: ${Object.keys(row).join(', ')}`)
-      
+
       const expectedHeaders = [
-        'id_pracownika', 'imie_nazwisko', 'id_restauracji', 'nazwa_restauracji',
-        'miesiac', 'suma_godzin', 'stawka_pln', 'suma_kwota_pln'
+        'id_pracownika',
+        'imie_nazwisko',
+        'id_restauracji',
+        'nazwa_restauracji',
+        'miesiac',
+        'suma_godzin',
+        'stawka_pln',
+        'suma_kwota_pln',
       ]
-      
-      const hasAllHeaders = expectedHeaders.every(h => h in row)
-      
+
+      const hasAllHeaders = expectedHeaders.every((h) => h in row)
+
       if (hasAllHeaders) {
         logSuccess('Monthly export has correct Polish headers')
-        console.log(`   Sample: ${row.imie_nazwisko}, ${row.miesiac}, ${row.suma_godzin}h, ${row.suma_kwota_pln} PLN`)
+        console.log(
+          `   Sample: ${row.imie_nazwisko}, ${row.miesiac}, ${row.suma_godzin}h, ${row.suma_kwota_pln} PLN`
+        )
       } else {
         logFailure('Monthly export missing some headers')
       }
@@ -273,23 +299,24 @@ async function runTests() {
     console.log('='.repeat(60))
 
     const testRow = dailyData[0]
-    
+
     // Check that numbers are rounded to max 2 decimals (integers are OK too)
     const checkPrecision = (num: number) => {
       const str = num.toString()
       const decimals = str.split('.')[1]
       return !decimals || decimals.length <= 2
     }
-    
-    const hasCorrectPrecision = (
+
+    const hasCorrectPrecision =
       checkPrecision(testRow.godziny) &&
       checkPrecision(testRow.stawka_pln) &&
       checkPrecision(testRow.kwota_pln)
-    )
 
     if (hasCorrectPrecision) {
       logSuccess('Numbers formatted with correct precision (max 2 decimals)')
-      console.log(`   Hours: ${testRow.godziny}, Rate: ${testRow.stawka_pln}, Amount: ${testRow.kwota_pln}`)
+      console.log(
+        `   Hours: ${testRow.godziny}, Rate: ${testRow.stawka_pln}, Amount: ${testRow.kwota_pln}`
+      )
     } else {
       logFailure('Number formatting incorrect')
     }
@@ -302,11 +329,10 @@ async function runTests() {
     console.log('='.repeat(60))
 
     await prisma.timeEntry.delete({
-      where: { id: testEntry.id }
+      where: { id: testEntry.id },
     })
 
     console.log('✅ Cleanup complete')
-
   } catch (error) {
     console.error('\n❌ Test suite error:', error)
     testsFailedCount++
@@ -320,7 +346,9 @@ async function runTests() {
   console.log('='.repeat(60))
   console.log(`✅ Tests Passed: ${testsPassedCount}`)
   console.log(`❌ Tests Failed: ${testsFailedCount}`)
-  console.log(`📈 Success Rate: ${testsPassedCount}/${testsPassedCount + testsFailedCount} (${Math.round(testsPassedCount / (testsPassedCount + testsFailedCount) * 100)}%)`)
+  console.log(
+    `📈 Success Rate: ${testsPassedCount}/${testsPassedCount + testsFailedCount} (${Math.round((testsPassedCount / (testsPassedCount + testsFailedCount)) * 100)}%)`
+  )
   console.log('='.repeat(60) + '\n')
 
   if (testsFailedCount > 0) {
@@ -330,7 +358,7 @@ async function runTests() {
 
 // Run tests
 runTests()
-  .catch(error => {
+  .catch((error) => {
     console.error('Fatal error:', error)
     process.exit(1)
   })

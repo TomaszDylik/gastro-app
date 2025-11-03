@@ -9,20 +9,19 @@ export const dynamic = 'force-dynamic'
 
 /**
  * GET /api/restaurants
- * 
+ *
  * List all restaurants user has access to (based on memberships)
  */
 export async function GET() {
   try {
     // 1. Authenticate
     const supabase = createRouteHandlerClient({ cookies })
-    const { data: { session } } = await supabase.auth.getSession()
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
 
     if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // 2. Get user
@@ -31,49 +30,44 @@ export async function GET() {
       include: {
         memberships: {
           where: {
-            status: 'active'
+            status: 'active',
           },
           include: {
             restaurant: {
               include: {
                 company: true,
-                settings: true
-              }
-            }
-          }
-        }
-      }
+                settings: true,
+              },
+            },
+          },
+        },
+      },
     })
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     // 3. Return restaurants
-    const restaurants = user.memberships.map(m => ({
+    const restaurants = user.memberships.map((m) => ({
       id: m.restaurant.id,
       name: m.restaurant.name,
       timezone: m.restaurant.timezone,
-      company: m.restaurant.company ? {
-        id: m.restaurant.company.id,
-        name: m.restaurant.company.name
-      } : null,
+      company: m.restaurant.company
+        ? {
+            id: m.restaurant.company.id,
+            name: m.restaurant.company.name,
+          }
+        : null,
       settings: m.restaurant.settings,
       userRole: m.role,
-      userStatus: m.status
+      userStatus: m.status,
     }))
 
     return NextResponse.json({ restaurants })
-
   } catch (error) {
     console.error('Error fetching restaurants:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   } finally {
     await prisma.$disconnect()
   }
@@ -81,41 +75,37 @@ export async function GET() {
 
 /**
  * POST /api/restaurants
- * 
+ *
  * Create new restaurant (owner/super_admin only)
- * 
+ *
  * Body: { name, timezone, companyId? }
  */
 export async function POST(request: NextRequest) {
   try {
     // 1. Authenticate
     const supabase = createRouteHandlerClient({ cookies })
-    const { data: { session } } = await supabase.auth.getSession()
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
 
     if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // 2. Get user and check if super_admin or owner
     const user = await prisma.appUser.findUnique({
       where: { authUserId: session.user.id },
       include: {
-        memberships: true
-      }
+        memberships: true,
+      },
     })
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    const isSuperAdmin = user.memberships.some(m => m.role === 'super_admin')
-    const isOwner = user.memberships.some(m => m.role === 'owner')
+    const isSuperAdmin = user.memberships.some((m) => m.role === 'super_admin')
+    const isOwner = user.memberships.some((m) => m.role === 'owner')
 
     if (!isSuperAdmin && !isOwner) {
       return NextResponse.json(
@@ -142,13 +132,13 @@ export async function POST(request: NextRequest) {
         timezone,
         companyId: companyId || null,
         settings: {
-          create: {}
-        }
+          create: {},
+        },
       },
       include: {
         company: true,
-        settings: true
-      }
+        settings: true,
+      },
     })
 
     // 5. Create owner membership for creator
@@ -157,26 +147,25 @@ export async function POST(request: NextRequest) {
         userId: user.id,
         restaurantId: restaurant.id,
         role: 'owner',
-        status: 'active'
-      }
+        status: 'active',
+      },
     })
 
-    return NextResponse.json({
-      restaurant: {
-        id: restaurant.id,
-        name: restaurant.name,
-        timezone: restaurant.timezone,
-        company: restaurant.company,
-        settings: restaurant.settings
-      }
-    }, { status: 201 })
-
+    return NextResponse.json(
+      {
+        restaurant: {
+          id: restaurant.id,
+          name: restaurant.name,
+          timezone: restaurant.timezone,
+          company: restaurant.company,
+          settings: restaurant.settings,
+        },
+      },
+      { status: 201 }
+    )
   } catch (error) {
     console.error('Error creating restaurant:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   } finally {
     await prisma.$disconnect()
   }

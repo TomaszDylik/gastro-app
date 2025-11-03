@@ -6,10 +6,10 @@ const prisma = new PrismaClient()
 
 /**
  * POST /api/time-entries/close-hanging
- * 
+ *
  * Manager can close a TimeEntry that has clockIn but no clockOut.
  * Sets clockOut to shift.end or specified time.
- * 
+ *
  * Body:
  * - timeEntryId: string (required)
  * - closedByUserId: string (required - must be manager/owner)
@@ -32,21 +32,16 @@ export async function POST(request: NextRequest) {
     const user = await prisma.appUser.findUnique({
       where: { id: closedByUserId },
       include: {
-        memberships: true
-      }
+        memberships: true,
+      },
     })
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     // Check if user has manager/owner role in any restaurant
-    const hasManagerRole = user.memberships.some(
-      m => m.role === 'manager' || m.role === 'owner'
-    )
+    const hasManagerRole = user.memberships.some((m) => m.role === 'manager' || m.role === 'owner')
 
     if (!hasManagerRole) {
       return NextResponse.json(
@@ -57,38 +52,24 @@ export async function POST(request: NextRequest) {
 
     // Close hanging entry
     const closeTimeDate = closeTime ? new Date(closeTime) : undefined
-    
-    const updatedTimeEntry = await closeHangingTimeEntry(
-      timeEntryId,
-      closedByUserId,
-      closeTimeDate
-    )
+
+    const updatedTimeEntry = await closeHangingTimeEntry(timeEntryId, closedByUserId, closeTimeDate)
 
     return NextResponse.json({
       success: true,
-      timeEntry: updatedTimeEntry
+      timeEntry: updatedTimeEntry,
     })
-
   } catch (error: any) {
     console.error('❌ Close hanging entry error:', error)
-    
+
     if (error.message === 'TimeEntry not found') {
-      return NextResponse.json(
-        { error: 'TimeEntry not found' },
-        { status: 404 }
-      )
-    }
-    
-    if (error.message === 'TimeEntry already has clockOut') {
-      return NextResponse.json(
-        { error: 'TimeEntry already has clockOut' },
-        { status: 409 }
-      )
+      return NextResponse.json({ error: 'TimeEntry not found' }, { status: 404 })
     }
 
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    if (error.message === 'TimeEntry already has clockOut') {
+      return NextResponse.json({ error: 'TimeEntry already has clockOut' }, { status: 409 })
+    }
+
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

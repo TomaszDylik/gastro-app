@@ -34,7 +34,7 @@ export default function OwnerCompaniesPage() {
   }
 
   if (loading) {
-    return <div className="text-center py-12">Ładowanie firm...</div>
+    return <div className="py-12 text-center">Ładowanie firm...</div>
   }
 
   return (
@@ -43,24 +43,24 @@ export default function OwnerCompaniesPage() {
         <h2 className="text-2xl font-bold text-gray-800">Moje Firmy 🏭</h2>
         <a
           href="/owner/companies/new"
-          className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          className="rounded-lg bg-purple-600 px-4 py-2 text-white transition-colors hover:bg-purple-700"
         >
           + Dodaj firmę
         </a>
       </div>
 
       {companies.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-md p-12 text-center">
-          <p className="text-gray-500 mb-4">Nie masz jeszcze żadnych firm</p>
+        <div className="rounded-lg bg-white p-12 text-center shadow-md">
+          <p className="mb-4 text-gray-500">Nie masz jeszcze żadnych firm</p>
           <a
             href="/owner/companies/new"
-            className="inline-block px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            className="inline-block rounded-lg bg-purple-600 px-6 py-3 text-white transition-colors hover:bg-purple-700"
           >
             Utwórz pierwszą firmę
           </a>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {companies.map((company) => (
             <CompanyCard key={company.id} company={company} />
           ))}
@@ -72,8 +72,8 @@ export default function OwnerCompaniesPage() {
 
 function CompanyCard({ company }: { company: Company }) {
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-      <div className="flex items-start justify-between mb-4">
+    <div className="rounded-lg bg-white p-6 shadow-md transition-shadow hover:shadow-lg">
+      <div className="mb-4 flex items-start justify-between">
         <div>
           <h3 className="text-lg font-semibold text-gray-800">{company.name}</h3>
           <p className="text-sm text-gray-500">
@@ -83,23 +83,24 @@ function CompanyCard({ company }: { company: Company }) {
         <span className="text-3xl">🏭</span>
       </div>
 
-      <div className="flex items-center gap-2 text-gray-600 mb-4">
+      <div className="mb-4 flex items-center gap-2 text-gray-600">
         <span className="text-lg">🍽️</span>
         <span className="text-sm">
-          {company.restaurantsCount} {company.restaurantsCount === 1 ? 'restauracja' : 'restauracji'}
+          {company.restaurantsCount}{' '}
+          {company.restaurantsCount === 1 ? 'restauracja' : 'restauracji'}
         </span>
       </div>
 
       <div className="flex gap-2">
         <a
           href={`/owner/companies/${company.id}`}
-          className="flex-1 text-center px-3 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors text-sm font-medium"
+          className="flex-1 rounded-lg bg-purple-100 px-3 py-2 text-center text-sm font-medium text-purple-700 transition-colors hover:bg-purple-200"
         >
           Szczegóły
         </a>
         <a
           href={`/owner/restaurants?companyId=${company.id}`}
-          className="flex-1 text-center px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium"
+          className="flex-1 rounded-lg bg-blue-100 px-3 py-2 text-center text-sm font-medium text-blue-700 transition-colors hover:bg-blue-200"
         >
           Restauracje
         </a>

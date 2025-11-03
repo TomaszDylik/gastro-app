@@ -39,7 +39,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     loadDashboardData()
-    
+
     // Odświeżaj licznik co sekundę gdy pracownik jest w pracy
     const interval = setInterval(() => {
       if (activeEntry) {
@@ -59,20 +59,20 @@ export default function DashboardPage() {
         router.push('/login')
         return
       }
-      
+
       const user = await userResponse.json()
-      
+
       // Jeśli to manager, przekieruj na panel managera
       if (user.role === 'manager') {
         router.push('/manager/dashboard')
         return
       }
-      
+
       setUserData(user)
 
       // Pobierz dzisiejszą zmianę (mock - w rzeczywistości pobierz z API/Supabase)
       // TODO: Zaimplementuj prawdziwe zapytanie gdy będzie membership
-      
+
       // Mock dzisiejszej zmiany
       const today = new Date()
       const mockShift: Shift = {
@@ -80,7 +80,7 @@ export default function DashboardPage() {
         start: new Date(today.setHours(9, 0, 0)).toISOString(),
         end: new Date(today.setHours(17, 0, 0)).toISOString(),
         roleTag: 'Kelner',
-        notes: null
+        notes: null,
       }
       setTodayShift(mockShift)
 
@@ -88,7 +88,6 @@ export default function DashboardPage() {
       // TODO: Query do TimeEntry gdzie clockOut IS NULL
       const mockActiveEntry: TimeEntry | null = null // Zmień gdy będzie logika
       setActiveEntry(mockActiveEntry)
-
     } catch (error) {
       console.error('Błąd ładowania danych:', error)
       router.push('/login')
@@ -100,15 +99,15 @@ export default function DashboardPage() {
   const handleClockIn = async () => {
     try {
       const now = new Date().toISOString()
-      
+
       // TODO: Zapisz do bazy TimeEntry
       const newEntry: TimeEntry = {
         id: Math.random().toString(),
         clockIn: now,
         clockOut: null,
-        scheduleId: todayShift?.id || ''
+        scheduleId: todayShift?.id || '',
       }
-      
+
       setActiveEntry(newEntry)
       alert('✅ Rozpoczęto pracę!')
     } catch (error) {
@@ -123,7 +122,7 @@ export default function DashboardPage() {
     try {
       const now = new Date().toISOString()
       const minutes = differenceInMinutes(new Date(now), new Date(activeEntry.clockIn))
-      
+
       // TODO: Zaktualizuj TimeEntry w bazie (ustaw clockOut, status='pending')
       // Przykładowe dane do zapisu:
       const timeEntry = {
@@ -133,15 +132,17 @@ export default function DashboardPage() {
         totalMinutes: minutes,
         status: 'pending', // Oczekuje na potwierdzenie managera
         approvedByUserId: null,
-        approvedAt: null
+        approvedAt: null,
       }
-      
+
       console.log('Zapisuję TimeEntry (pending):', timeEntry)
-      
+
       setActiveEntry(null)
       setElapsedTime(0)
-      alert(`✅ Zakończono pracę!\n⏱️ Czas: ${formatTime(minutes)}\n⏳ Oczekuje na potwierdzenie managera`)
-      
+      alert(
+        `✅ Zakończono pracę!\n⏱️ Czas: ${formatTime(minutes)}\n⏳ Oczekuje na potwierdzenie managera`
+      )
+
       loadDashboardData() // Odśwież dane
     } catch (error) {
       console.error('Błąd zakończenia pracy:', error)
@@ -157,38 +158,38 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <main className="container mx-auto p-4 max-w-2xl">
+      <main className="container mx-auto max-w-2xl p-4">
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-48 mb-6"></div>
-          <div className="h-40 bg-gray-200 rounded mb-4"></div>
+          <div className="mb-6 h-8 w-48 rounded bg-gray-200"></div>
+          <div className="mb-4 h-40 rounded bg-gray-200"></div>
         </div>
       </main>
     )
   }
 
   return (
-    <main className="container mx-auto p-4 max-w-2xl">
+    <main className="container mx-auto max-w-2xl p-4">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-1">
+        <h1 className="mb-1 text-2xl font-bold">
           {userData?.name ? `Witaj, ${userData.name.split(' ')[0]}! 👋` : 'Dashboard'}
         </h1>
         <p className="text-gray-600">{format(new Date(), 'EEEE, d MMMM yyyy', { locale: pl })}</p>
         {userData?.restaurantName && (
-          <p className="text-sm text-gray-500 mt-1">📍 {userData.restaurantName}</p>
+          <p className="mt-1 text-sm text-gray-500">📍 {userData.restaurantName}</p>
         )}
       </div>
 
       {/* Dzisiejsza zmiana */}
       {todayShift ? (
-        <div className="bg-white rounded-lg shadow-md p-6 mb-4">
-          <div className="flex items-center justify-between mb-4">
+        <div className="mb-4 rounded-lg bg-white p-6 shadow-md">
+          <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold">📅 Dzisiejsza zmiana</h2>
-            <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+            <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800">
               {todayShift.roleTag || 'Zmiana'}
             </span>
           </div>
-          
+
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               <span className="text-gray-500">⏰ Start:</span>
@@ -199,72 +200,74 @@ export default function DashboardPage() {
               <span className="font-semibold">{format(new Date(todayShift.end), 'HH:mm')}</span>
             </div>
             {todayShift.notes && (
-              <div className="pt-2 border-t">
+              <div className="border-t pt-2">
                 <p className="text-sm text-gray-600">📝 {todayShift.notes}</p>
               </div>
             )}
           </div>
         </div>
       ) : (
-        <div className="bg-gray-50 rounded-lg p-6 mb-4 text-center">
+        <div className="mb-4 rounded-lg bg-gray-50 p-6 text-center">
           <p className="text-gray-500">Brak zaplanowanej zmiany na dziś</p>
         </div>
       )}
 
       {/* Panel Start/Stop */}
-      <div className={`rounded-lg shadow-lg p-6 mb-4 text-white transition-all duration-500 ${
-        activeEntry 
-          ? 'bg-gradient-to-br from-red-500 to-red-600 shadow-red-500/50' 
-          : 'bg-gradient-to-br from-green-500 to-green-600 shadow-green-500/50'
-      }`}>
+      <div
+        className={`mb-4 rounded-lg p-6 text-white shadow-lg transition-all duration-500 ${
+          activeEntry
+            ? 'bg-gradient-to-br from-red-500 to-red-600 shadow-red-500/50'
+            : 'bg-gradient-to-br from-green-500 to-green-600 shadow-green-500/50'
+        }`}
+      >
         {activeEntry ? (
           <>
-            <div className="text-center mb-6">
-              <div className="inline-flex items-center gap-2 bg-white/20 rounded-full px-4 py-2 mb-3">
-                <div className="w-3 h-3 bg-red-300 rounded-full animate-pulse"></div>
+            <div className="mb-6 text-center">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2">
+                <div className="h-3 w-3 animate-pulse rounded-full bg-red-300"></div>
                 <span className="text-sm font-medium">W PRACY</span>
               </div>
-              <div className="text-5xl font-bold mb-2">{formatTime(elapsedTime)}</div>
-              <p className="text-red-100 text-sm">
+              <div className="mb-2 text-5xl font-bold">{formatTime(elapsedTime)}</div>
+              <p className="text-sm text-red-100">
                 Rozpoczęto o {format(new Date(activeEntry.clockIn), 'HH:mm')}
               </p>
             </div>
-            
+
             <div className="flex justify-center">
               <button
                 onClick={handleClockOut}
-                className="w-48 h-48 bg-white text-red-600 font-bold rounded-full hover:bg-red-50 transition-all hover:scale-105 shadow-2xl flex flex-col items-center justify-center text-lg relative overflow-hidden"
+                className="relative flex h-48 w-48 flex-col items-center justify-center overflow-hidden rounded-full bg-white text-lg font-bold text-red-600 shadow-2xl transition-all hover:scale-105 hover:bg-red-50"
               >
-                <div className="absolute inset-0 bg-red-600 opacity-0 hover:opacity-10 rounded-full transition-opacity"></div>
-                <span className="text-4xl mb-2">🛑</span>
+                <div className="absolute inset-0 rounded-full bg-red-600 opacity-0 transition-opacity hover:opacity-10"></div>
+                <span className="mb-2 text-4xl">🛑</span>
                 <span>Zakończ pracę</span>
               </button>
             </div>
-            <p className="text-center text-red-100 text-xs mt-4">
+            <p className="mt-4 text-center text-xs text-red-100">
               ⚠️ Po zakończeniu poczekaj na potwierdzenie managera
             </p>
           </>
         ) : (
           <>
-            <div className="text-center mb-6">
-              <h3 className="text-xl font-semibold mb-2">Gotowy do pracy?</h3>
-              <p className="text-green-100 text-sm">Rozpocznij rejestrowanie czasu</p>
+            <div className="mb-6 text-center">
+              <h3 className="mb-2 text-xl font-semibold">Gotowy do pracy?</h3>
+              <p className="text-sm text-green-100">Rozpocznij rejestrowanie czasu</p>
             </div>
-            
+
             <div className="flex justify-center">
               <button
                 onClick={handleClockIn}
                 disabled={!todayShift}
-                className="w-48 h-48 bg-white text-green-600 font-bold rounded-full hover:bg-green-50 transition-all hover:scale-105 shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center justify-center text-lg relative overflow-hidden"
+                className="relative flex h-48 w-48 flex-col items-center justify-center overflow-hidden rounded-full bg-white text-lg font-bold text-green-600 shadow-2xl transition-all hover:scale-105 hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <div className="absolute inset-0 bg-green-600 opacity-0 hover:opacity-10 rounded-full transition-opacity"></div>
-                <span className="text-4xl mb-2">▶️</span>
+                <div className="absolute inset-0 rounded-full bg-green-600 opacity-0 transition-opacity hover:opacity-10"></div>
+                <span className="mb-2 text-4xl">▶️</span>
                 <span>Rozpocznij pracę</span>
               </button>
             </div>
-            
+
             {!todayShift && (
-              <p className="text-center text-blue-100 text-xs mt-2">
+              <p className="mt-2 text-center text-xs text-blue-100">
                 Brak dzisiejszej zmiany w grafiku
               </p>
             )}

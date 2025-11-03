@@ -1,6 +1,6 @@
 /**
  * ETAP 7: Weekly and Monthly Reports
- * 
+ *
  * Integration tests for:
  * - Generate weekly report (Monday-Sunday aggregation)
  * - Generate monthly report (full month aggregation)
@@ -41,7 +41,7 @@ async function runTests() {
     console.log('\n📋 SETUP: Loading test data...\n')
 
     const restaurant = await prisma.restaurant.findFirst({
-      where: { name: 'Pod Gruszą' }
+      where: { name: 'Pod Gruszą' },
     })
 
     if (!restaurant) {
@@ -52,27 +52,27 @@ async function runTests() {
       where: { email: 'manager@gmail.pl' },
       include: {
         memberships: {
-          where: { restaurantId: restaurant.id }
-        }
-      }
+          where: { restaurantId: restaurant.id },
+        },
+      },
     })
 
     const employee1 = await prisma.appUser.findFirst({
       where: { email: 'employee1@gmail.pl' },
       include: {
         memberships: {
-          where: { restaurantId: restaurant.id }
-        }
-      }
+          where: { restaurantId: restaurant.id },
+        },
+      },
     })
 
     const employee2 = await prisma.appUser.findFirst({
       where: { email: 'employee2@gmail.pl' },
       include: {
         memberships: {
-          where: { restaurantId: restaurant.id }
-        }
-      }
+          where: { restaurantId: restaurant.id },
+        },
+      },
     })
 
     if (!manager || !employee1 || !employee2) {
@@ -89,7 +89,7 @@ async function runTests() {
 
     // Get or create schedule
     let schedule = await prisma.schedule.findFirst({
-      where: { restaurantId: restaurant.id }
+      where: { restaurantId: restaurant.id },
     })
 
     if (!schedule) {
@@ -97,8 +97,8 @@ async function runTests() {
         data: {
           name: 'Test Schedule',
           restaurantId: restaurant.id,
-          isActive: true
-        }
+          isActive: true,
+        },
       })
     }
 
@@ -133,18 +133,18 @@ async function runTests() {
         scheduleId: schedule.id,
         clockIn: {
           gte: lastMonday,
-          lte: weekEnd
-        }
-      }
+          lte: weekEnd,
+        },
+      },
     })
 
     // Create TimeEntries for 5 days (Mon-Fri) for 2 employees
     const timeEntries = []
-    
+
     for (let day = 0; day < 5; day++) {
       const entryDate = new Date(lastMonday)
       entryDate.setDate(lastMonday.getDate() + day)
-      
+
       // Employee1: 8h shifts (09:00-17:00)
       const emp1Start = new Date(entryDate)
       emp1Start.setHours(9, 0, 0, 0)
@@ -158,8 +158,8 @@ async function runTests() {
           clockIn: emp1Start,
           clockOut: emp1End,
           source: 'manual',
-          status: 'active'
-        }
+          status: 'active',
+        },
       })
       timeEntries.push(entry1)
 
@@ -176,8 +176,8 @@ async function runTests() {
           clockIn: emp2Start,
           clockOut: emp2End,
           source: 'manual',
-          status: 'active'
-        }
+          status: 'active',
+        },
       })
       timeEntries.push(entry2)
     }
@@ -200,8 +200,8 @@ async function runTests() {
     await prisma.reportWeekly.deleteMany({
       where: {
         restaurantId: restaurant.id,
-        weekStart: lastMonday
-      }
+        weekStart: lastMonday,
+      },
     })
 
     const weeklyReport = await prisma.reportWeekly.create({
@@ -217,21 +217,21 @@ async function runTests() {
               userName: employee1.name || 'Employee1',
               totalHours: 40,
               totalAmount: 1400,
-              days: 5
+              days: 5,
             },
             {
               userId: employee2.id,
               userName: employee2.name || 'Employee2',
               totalHours: 35,
               totalAmount: 1400,
-              days: 5
-            }
+              days: 5,
+            },
           ],
           grandTotalHours: 75,
           grandTotalAmount: 2800,
-          dailyReportsCount: 5
-        }
-      }
+          dailyReportsCount: 5,
+        },
+      },
     })
 
     if (weeklyReport && weeklyReport.totalsJson) {
@@ -245,7 +245,9 @@ async function runTests() {
       if (totals.grandTotalHours === 75 && totals.grandTotalAmount === 2800) {
         logSuccess('Weekly report generated with correct totals')
       } else {
-        logFailure(`Weekly report totals incorrect: ${totals.grandTotalHours}h, ${totals.grandTotalAmount} PLN`)
+        logFailure(
+          `Weekly report totals incorrect: ${totals.grandTotalHours}h, ${totals.grandTotalAmount} PLN`
+        )
       }
     } else {
       logFailure('Weekly report generation failed', weeklyReport)
@@ -263,8 +265,8 @@ async function runTests() {
         data: {
           restaurantId: restaurant.id,
           weekStart: lastMonday,
-          totalsJson: {}
-        }
+          totalsJson: {},
+        },
       })
       logFailure('Duplicate weekly report was allowed (should fail)')
     } catch (error: any) {
@@ -294,8 +296,8 @@ async function runTests() {
     await prisma.reportMonthly.deleteMany({
       where: {
         restaurantId: restaurant.id,
-        periodMonth: lastMonth
-      }
+        periodMonth: lastMonth,
+      },
     })
 
     const monthlyReport = await prisma.reportMonthly.create({
@@ -311,21 +313,21 @@ async function runTests() {
               userName: employee1.name || 'Employee1',
               totalHours: 160, // ~20 days × 8h
               totalAmount: 5600, // 160h × 35 PLN
-              days: 20
+              days: 20,
             },
             {
               userId: employee2.id,
               userName: employee2.name || 'Employee2',
               totalHours: 140, // ~20 days × 7h
               totalAmount: 5600, // 140h × 40 PLN
-              days: 20
-            }
+              days: 20,
+            },
           ],
           grandTotalHours: 300,
           grandTotalAmount: 11200,
-          timeEntriesCount: 40
-        }
-      }
+          timeEntriesCount: 40,
+        },
+      },
     })
 
     if (monthlyReport && monthlyReport.totalsJson) {
@@ -357,8 +359,8 @@ async function runTests() {
         data: {
           restaurantId: restaurant.id,
           periodMonth: lastMonth,
-          totalsJson: {}
-        }
+          totalsJson: {},
+        },
       })
       logFailure('Duplicate monthly report was allowed (should fail)')
     } catch (error: any) {
@@ -379,11 +381,11 @@ async function runTests() {
     const weeklyReports = await prisma.reportWeekly.findMany({
       where: { restaurantId: restaurant.id },
       orderBy: { weekStart: 'desc' },
-      take: 5
+      take: 5,
     })
 
     console.log(`   Found ${weeklyReports.length} weekly reports`)
-    
+
     if (weeklyReports.length >= 1) {
       logSuccess(`Retrieved ${weeklyReports.length} weekly reports`)
     } else {
@@ -400,11 +402,11 @@ async function runTests() {
     const monthlyReports = await prisma.reportMonthly.findMany({
       where: { restaurantId: restaurant.id },
       orderBy: { periodMonth: 'desc' },
-      take: 5
+      take: 5,
     })
 
     console.log(`   Found ${monthlyReports.length} monthly reports`)
-    
+
     if (monthlyReports.length >= 1) {
       logSuccess(`Retrieved ${monthlyReports.length} monthly reports`)
     } else {
@@ -423,13 +425,12 @@ async function runTests() {
         scheduleId: schedule.id,
         clockIn: {
           gte: lastMonday,
-          lte: weekEnd
-        }
-      }
+          lte: weekEnd,
+        },
+      },
     })
 
     console.log('✅ Cleanup complete')
-
   } catch (error) {
     console.error('\n❌ Test suite error:', error)
     testsFailedCount++
@@ -443,7 +444,9 @@ async function runTests() {
   console.log('='.repeat(60))
   console.log(`✅ Tests Passed: ${testsPassedCount}`)
   console.log(`❌ Tests Failed: ${testsFailedCount}`)
-  console.log(`📈 Success Rate: ${testsPassedCount}/${testsPassedCount + testsFailedCount} (${Math.round(testsPassedCount / (testsPassedCount + testsFailedCount) * 100)}%)`)
+  console.log(
+    `📈 Success Rate: ${testsPassedCount}/${testsPassedCount + testsFailedCount} (${Math.round((testsPassedCount / (testsPassedCount + testsFailedCount)) * 100)}%)`
+  )
   console.log('='.repeat(60) + '\n')
 
   if (testsFailedCount > 0) {
@@ -453,7 +456,7 @@ async function runTests() {
 
 // Run tests
 runTests()
-  .catch(error => {
+  .catch((error) => {
     console.error('Fatal error:', error)
     process.exit(1)
   })

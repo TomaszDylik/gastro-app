@@ -11,20 +11,14 @@ import { createAuditLog } from '@/lib/audit'
 
 const prisma = new PrismaClient()
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const membershipId = params.id
     const body = await request.json()
     const { actorUserId, reason } = body
 
     if (!actorUserId) {
-      return NextResponse.json(
-        { error: 'actorUserId is required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'actorUserId is required' }, { status: 400 })
     }
 
     // Get membership details before deletion
@@ -37,10 +31,7 @@ export async function DELETE(
     })
 
     if (!membership) {
-      return NextResponse.json(
-        { error: 'Membership not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Membership not found' }, { status: 404 })
     }
 
     // Check permission: manager removing employee OR employee leaving themselves
@@ -59,8 +50,7 @@ export async function DELETE(
 
     const actorMembership = actor.memberships[0]
     const managerRoles = ['manager', 'owner', 'super_admin']
-    const isManager =
-      actorMembership && managerRoles.includes(actorMembership.role)
+    const isManager = actorMembership && managerRoles.includes(actorMembership.role)
     const isSelfLeaving = actorUserId === membership.userId
 
     if (!isManager && !isSelfLeaving) {
@@ -107,16 +97,11 @@ export async function DELETE(
 
     return NextResponse.json({
       success: true,
-      message: isSelfLeaving
-        ? 'You have left the restaurant'
-        : 'Employee removed from restaurant',
+      message: isSelfLeaving ? 'You have left the restaurant' : 'Employee removed from restaurant',
       membershipId,
     })
   } catch (error) {
     console.error('Error removing membership:', error)
-    return NextResponse.json(
-      { error: 'Failed to remove membership' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to remove membership' }, { status: 500 })
   }
 }

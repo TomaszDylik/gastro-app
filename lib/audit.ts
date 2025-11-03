@@ -114,10 +114,7 @@ export async function getAuditLogs(params: {
 /**
  * Pobiera audit logi dla konkretnego entity
  */
-export async function getEntityAuditHistory(
-  entityType: string,
-  entityId: string
-) {
+export async function getEntityAuditHistory(entityType: string, entityId: string) {
   const logs = await prisma.auditLog.findMany({
     where: {
       entityType,

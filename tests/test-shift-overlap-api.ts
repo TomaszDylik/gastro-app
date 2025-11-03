@@ -1,6 +1,6 @@
 /**
  * Integration test for Shift Overlap Validation API
- * 
+ *
  * Tests the POST /api/shifts/validate endpoint
  */
 
@@ -15,8 +15,8 @@ async function testShiftOverlapAPI() {
     // 1. Get an existing membership to test with
     const membership = await prisma.membership.findFirst({
       where: {
-        status: 'active'
-      }
+        status: 'active',
+      },
     })
 
     if (!membership) {
@@ -30,11 +30,11 @@ async function testShiftOverlapAPI() {
     const existingAssignments = await prisma.shiftAssignment.findMany({
       where: {
         membershipId: membership.id,
-        status: 'assigned'
+        status: 'assigned',
       },
       include: {
-        shift: true
-      }
+        shift: true,
+      },
     })
 
     console.log(`✅ Found ${existingAssignments.length} existing shift(s) for this membership\n`)
@@ -89,12 +89,12 @@ async function testShiftOverlapAPI() {
       console.log()
     } else {
       console.log('ℹ️  No existing shifts found - creating test scenarios with new shifts')
-      
+
       // Create a test schedule if needed
       let schedule = await prisma.schedule.findFirst({
         where: {
-          restaurantId: membership.restaurantId
-        }
+          restaurantId: membership.restaurantId,
+        },
       })
 
       if (!schedule) {
@@ -102,8 +102,8 @@ async function testShiftOverlapAPI() {
         schedule = await prisma.schedule.create({
           data: {
             name: 'Test Schedule',
-            restaurantId: membership.restaurantId
-          }
+            restaurantId: membership.restaurantId,
+          },
         })
       }
 
@@ -130,7 +130,6 @@ async function testShiftOverlapAPI() {
     console.log('2. Log in as a manager or employee')
     console.log('3. Make POST requests to /api/shifts/validate with the test data above')
     console.log('4. Verify the responses match expectations')
-
   } catch (error) {
     console.error('❌ Test error:', error)
   } finally {

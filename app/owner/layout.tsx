@@ -28,15 +28,15 @@ export default function OwnerLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-gradient-to-r from-purple-600 to-purple-800 shadow-lg sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+      <header className="sticky top-0 z-10 bg-gradient-to-r from-purple-600 to-purple-800 shadow-lg">
+        <div className="container mx-auto flex items-center justify-between px-4 py-4">
           <div>
             <h1 className="text-2xl font-bold text-white">Panel Właściciela</h1>
-            <p className="text-purple-100 text-sm">Gastro Schedules</p>
+            <p className="text-sm text-purple-100">Gastro Schedules</p>
           </div>
           <button
             onClick={handleLogout}
-            className="text-sm text-white hover:text-red-200 transition-colors px-4 py-2 rounded-lg hover:bg-purple-700"
+            className="rounded-lg px-4 py-2 text-sm text-white transition-colors hover:bg-purple-700 hover:text-red-200"
           >
             🚪 Wyloguj
           </button>
@@ -45,17 +45,17 @@ export default function OwnerLayout({ children }: { children: ReactNode }) {
 
       <div className="flex">
         {/* Sidebar Navigation - Desktop */}
-        <nav className="hidden md:block w-64 bg-white shadow-md min-h-screen">
-          <div className="p-4 space-y-2">
+        <nav className="hidden min-h-screen w-64 bg-white shadow-md md:block">
+          <div className="space-y-2 p-4">
             {navigation.map((item) => {
               const isActive = pathname === item.href
               return (
                 <Link
                   key={item.name}
                   href={item.href as any}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  className={`flex items-center gap-3 rounded-lg px-4 py-3 transition-colors ${
                     isActive
-                      ? 'bg-purple-100 text-purple-700 font-semibold'
+                      ? 'bg-purple-100 font-semibold text-purple-700'
                       : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
@@ -68,13 +68,11 @@ export default function OwnerLayout({ children }: { children: ReactNode }) {
         </nav>
 
         {/* Main Content */}
-        <div className="flex-1 container mx-auto p-6">
-          {children}
-        </div>
+        <div className="container mx-auto flex-1 p-6">{children}</div>
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg">
+      <nav className="fixed bottom-0 left-0 right-0 border-t border-gray-200 bg-white shadow-lg md:hidden">
         <div className="grid grid-cols-5 gap-1">
           {navigation.map((item) => {
             const isActive = pathname === item.href
@@ -82,16 +80,14 @@ export default function OwnerLayout({ children }: { children: ReactNode }) {
               <Link
                 key={item.name}
                 href={item.href as any}
-                className={`flex flex-col items-center justify-center py-2 px-1 transition-colors ${
+                className={`flex flex-col items-center justify-center px-1 py-2 transition-colors ${
                   isActive
-                    ? 'text-purple-600 bg-purple-50'
-                    : 'text-gray-600 hover:text-purple-600 hover:bg-gray-50'
+                    ? 'bg-purple-50 text-purple-600'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-purple-600'
                 }`}
               >
-                <span className="text-2xl mb-1">{item.icon}</span>
-                <span className="text-xs font-medium truncate w-full text-center">
-                  {item.name}
-                </span>
+                <span className="mb-1 text-2xl">{item.icon}</span>
+                <span className="w-full truncate text-center text-xs font-medium">{item.name}</span>
               </Link>
             )
           })}

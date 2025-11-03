@@ -5,9 +5,9 @@ const prisma = new PrismaClient()
 
 /**
  * POST /api/reports/monthly
- * 
+ *
  * Generate monthly report for a restaurant
- * 
+ *
  * Body:
  * - restaurantId: string
  * - periodMonth: string (YYYY-MM-01 - first day of month)
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     // Parse and validate periodMonth
     const monthDate = new Date(periodMonth)
     monthDate.setHours(0, 0, 0, 0)
-    
+
     // Ensure it's the first day of the month
     if (monthDate.getDate() !== 1) {
       return NextResponse.json(
@@ -41,9 +41,9 @@ export async function POST(request: NextRequest) {
       where: {
         restaurantId_periodMonth: {
           restaurantId,
-          periodMonth: monthDate
-        }
-      }
+          periodMonth: monthDate,
+        },
+      },
     })
 
     if (existingReport) {
@@ -63,33 +63,36 @@ export async function POST(request: NextRequest) {
     const timeEntries = await prisma.timeEntry.findMany({
       where: {
         schedule: {
-          restaurantId
+          restaurantId,
         },
         clockIn: {
           gte: monthDate,
-          lte: monthEnd
+          lte: monthEnd,
         },
         clockOut: {
-          not: null
-        }
+          not: null,
+        },
       },
       include: {
         membership: {
           include: {
-            user: true
-          }
-        }
-      }
+            user: true,
+          },
+        },
+      },
     })
 
     // Aggregate by employee
-    const employeeTotals = new Map<string, {
-      userId: string
-      userName: string
-      totalHours: number
-      totalAmount: number
-      days: number
-    }>()
+    const employeeTotals = new Map<
+      string,
+      {
+        userId: string
+        userName: string
+        totalHours: number
+        totalAmount: number
+        days: number
+      }
+    >()
 
     for (const entry of timeEntries) {
       if (!entry.clockOut) continue
@@ -100,10 +103,12 @@ export async function POST(request: NextRequest) {
       // Calculate hours
       const durationMs = entry.clockOut.getTime() - entry.clockIn.getTime()
       const hours = durationMs / (1000 * 60 * 60)
-      const adjustedHours = hours + (entry.adjustmentMinutes / 60)
+      const adjustedHours = hours + entry.adjustmentMinutes / 60
 
       // Get effective hourly rate
-      const hourlyRate = Number(entry.membership.hourlyRateManagerPLN || entry.membership.user.hourlyRateDefaultPLN || 0)
+      const hourlyRate = Number(
+        entry.membership.hourlyRateManagerPLN || entry.membership.user.hourlyRateDefaultPLN || 0
+      )
       const amount = adjustedHours * hourlyRate
 
       if (!employeeTotals.has(userId)) {
@@ -112,7 +117,7 @@ export async function POST(request: NextRequest) {
           userName,
           totalHours: 0,
           totalAmount: 0,
-          days: 0
+          days: 0,
         })
       }
 
@@ -123,12 +128,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Convert to array and round
-    const employeeData = Array.from(employeeTotals.values()).map(emp => ({
+    const employeeData = Array.from(employeeTotals.values()).map((emp) => ({
       userId: emp.userId,
       userName: emp.userName,
       totalHours: Math.round(emp.totalHours * 100) / 100,
       totalAmount: Math.round(emp.totalAmount * 100) / 100,
-      days: emp.days
+      days: emp.days,
     }))
 
     // Calculate grand totals
@@ -144,7 +149,7 @@ export async function POST(request: NextRequest) {
       employees: employeeData,
       grandTotalHours: Math.round(grandTotalHours * 100) / 100,
       grandTotalAmount: Math.round(grandTotalAmount * 100) / 100,
-      timeEntriesCount: timeEntries.length
+      timeEntriesCount: timeEntries.length,
     }
 
     // Create monthly report
@@ -152,27 +157,26 @@ export async function POST(request: NextRequest) {
       data: {
         restaurantId,
         periodMonth: monthDate,
-        totalsJson
-      }
+        totalsJson,
+      },
     })
 
-    return NextResponse.json({
-      success: true,
-      report: monthlyReport
-    }, { status: 201 })
-
+    return NextResponse.json(
+      {
+        success: true,
+        report: monthlyReport,
+      },
+      { status: 201 }
+    )
   } catch (error) {
     console.error('❌ Monthly report generation error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 /**
  * GET /api/reports/monthly?restaurantId=xxx&periodMonth=YYYY-MM-01
- * 
+ *
  * Get monthly report for a specific month
  */
 export async function GET(request: NextRequest) {
@@ -182,10 +186,7 @@ export async function GET(request: NextRequest) {
     const periodMonth = searchParams.get('periodMonth')
 
     if (!restaurantId) {
-      return NextResponse.json(
-        { error: 'restaurantId is required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'restaurantId is required' }, { status: 400 })
     }
 
     // If periodMonth provided, get specific month
@@ -197,16 +198,13 @@ export async function GET(request: NextRequest) {
         where: {
           restaurantId_periodMonth: {
             restaurantId,
-            periodMonth: monthDate
-          }
-        }
+            periodMonth: monthDate,
+          },
+        },
       })
 
       if (!report) {
-        return NextResponse.json(
-          { error: 'Monthly report not found' },
-          { status: 404 }
-        )
+        return NextResponse.json({ error: 'Monthly report not found' }, { status: 404 })
       }
 
       return NextResponse.json({ report })
@@ -216,16 +214,12 @@ export async function GET(request: NextRequest) {
     const reports = await prisma.reportMonthly.findMany({
       where: { restaurantId },
       orderBy: { periodMonth: 'desc' },
-      take: 12 // Last 12 months
+      take: 12, // Last 12 months
     })
 
     return NextResponse.json({ reports })
-
   } catch (error) {
     console.error('❌ Get monthly report error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

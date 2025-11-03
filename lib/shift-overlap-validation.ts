@@ -1,6 +1,6 @@
 /**
  * Shift Overlap Validation
- * 
+ *
  * Validates that a member doesn't have overlapping shifts across all schedules.
  * Handles:
  * - Shifts spanning midnight
@@ -20,19 +20,16 @@ export interface ShiftTimeRange {
 /**
  * Check if two time ranges overlap
  * Uses half-open interval: [start, end)
- * 
+ *
  * Ranges overlap if: start1 < end2 AND start2 < end1
  */
-export function doTimeRangesOverlap(
-  range1: ShiftTimeRange,
-  range2: ShiftTimeRange
-): boolean {
+export function doTimeRangesOverlap(range1: ShiftTimeRange, range2: ShiftTimeRange): boolean {
   return range1.start < range2.end && range2.start < range1.end
 }
 
 /**
  * Check if a member has overlapping shifts
- * 
+ *
  * @param membershipId - The membership to check
  * @param newShiftStart - Start time of the new/updated shift
  * @param newShiftEnd - End time of the new/updated shift
@@ -61,13 +58,13 @@ export async function checkShiftOverlap(params: {
     where: {
       membershipId,
       status: {
-        in: ['assigned', 'completed']
+        in: ['assigned', 'completed'],
       },
       ...(excludeShiftId && {
         shiftId: {
-          not: excludeShiftId
-        }
-      })
+          not: excludeShiftId,
+        },
+      }),
     },
     include: {
       shift: {
@@ -75,22 +72,24 @@ export async function checkShiftOverlap(params: {
           schedule: {
             select: {
               id: true,
-              name: true
-            }
-          }
-        }
-      }
-    }
+              name: true,
+            },
+          },
+        },
+      },
+    },
   })
 
   // Check each existing shift for overlap
   for (const assignment of assignments) {
     const existingShift = assignment.shift
 
-    if (doTimeRangesOverlap(
-      { start: newShiftStart, end: newShiftEnd },
-      { start: existingShift.start, end: existingShift.end }
-    )) {
+    if (
+      doTimeRangesOverlap(
+        { start: newShiftStart, end: newShiftEnd },
+        { start: existingShift.start, end: existingShift.end }
+      )
+    ) {
       return {
         hasOverlap: true,
         conflictingShift: {
@@ -98,8 +97,8 @@ export async function checkShiftOverlap(params: {
           scheduleId: existingShift.scheduleId,
           scheduleName: existingShift.schedule.name,
           start: existingShift.start,
-          end: existingShift.end
-        }
+          end: existingShift.end,
+        },
       }
     }
   }
@@ -109,11 +108,11 @@ export async function checkShiftOverlap(params: {
 
 /**
  * Calculate actual worked hours accounting for DST transitions
- * 
+ *
  * In Poland (Europe/Warsaw):
  * - Spring forward: last Sunday of March at 02:00 → 03:00 (lose 1 hour)
  * - Fall back: last Sunday of October at 03:00 → 02:00 (gain 1 hour)
- * 
+ *
  * @returns Actual hours worked (can be fractional)
  */
 export function calculateActualHours(
@@ -123,20 +122,20 @@ export function calculateActualHours(
 ): number {
   // Get milliseconds difference
   const msWorked = end.getTime() - start.getTime()
-  
+
   // Convert to hours
   const hoursWorked = msWorked / (1000 * 60 * 60)
-  
+
   // Add adjustment
   const adjustmentHours = adjustmentMinutes / 60
-  
+
   // Round to 2 decimal places
   return Math.round((hoursWorked + adjustmentHours) * 100) / 100
 }
 
 /**
  * Validate shift times
- * 
+ *
  * @throws Error if validation fails
  */
 export function validateShiftTimes(start: Date, end: Date): void {

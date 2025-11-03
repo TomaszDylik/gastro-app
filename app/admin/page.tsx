@@ -37,8 +37,8 @@ export default function AdminDashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-red-600 text-lg">Ładowanie dashboard...</div>
+      <div className="flex h-64 items-center justify-center">
+        <div className="text-lg text-red-600">Ładowanie dashboard...</div>
       </div>
     )
   }
@@ -46,29 +46,26 @@ export default function AdminDashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold text-gray-800">
-          Admin Dashboard 🛡️
-        </h2>
-        <p className="text-gray-600 mt-2">
-          Przegląd całego systemu Gastro Schedules (read-only)
-        </p>
+        <h2 className="text-3xl font-bold text-gray-800">Admin Dashboard 🛡️</h2>
+        <p className="mt-2 text-gray-600">Przegląd całego systemu Gastro Schedules (read-only)</p>
       </div>
 
       {/* Warning Banner */}
-      <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4">
+      <div className="rounded-lg border-2 border-red-200 bg-red-50 p-4">
         <div className="flex items-center gap-2">
           <span className="text-2xl">⚠️</span>
           <div>
             <p className="font-semibold text-red-800">Tryb wsparcia technicznego</p>
             <p className="text-sm text-red-600">
-              Ten panel służy wyłącznie do monitorowania i wsparcia. Nie dokonuj żadnych zmian bez zgody użytkowników.
+              Ten panel służy wyłącznie do monitorowania i wsparcia. Nie dokonuj żadnych zmian bez
+              zgody użytkowników.
             </p>
           </div>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         <StatCard
           icon="👥"
           title="Wszyscy użytkownicy"
@@ -81,18 +78,8 @@ export default function AdminDashboardPage() {
           value={stats?.totalCompanies || 0}
           color="purple"
         />
-        <StatCard
-          icon="🍽️"
-          title="Restauracje"
-          value={stats?.totalRestaurants || 0}
-          color="blue"
-        />
-        <StatCard
-          icon="👨‍🍳"
-          title="Pracownicy"
-          value={stats?.totalEmployees || 0}
-          color="green"
-        />
+        <StatCard icon="🍽️" title="Restauracje" value={stats?.totalRestaurants || 0} color="blue" />
+        <StatCard icon="👨‍🍳" title="Pracownicy" value={stats?.totalEmployees || 0} color="green" />
         <StatCard
           icon="⏰"
           title="Aktywne zmiany dziś"
@@ -108,11 +95,9 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Quick Tools */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-xl font-semibold text-gray-800 mb-4">
-          Narzędzia wsparcia
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="rounded-lg bg-white p-6 shadow-md">
+        <h3 className="mb-4 text-xl font-semibold text-gray-800">Narzędzia wsparcia</h3>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <ToolButton
             icon="👥"
             label="Przegląd użytkowników"
@@ -165,13 +150,11 @@ function StatCard({
   }
 
   return (
-    <div
-      className={`border-2 rounded-lg p-6 ${colorClasses[color as keyof typeof colorClasses]}`}
-    >
+    <div className={`rounded-lg border-2 p-6 ${colorClasses[color as keyof typeof colorClasses]}`}>
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium opacity-80">{title}</p>
-          <p className="text-3xl font-bold mt-2">{value}</p>
+          <p className="mt-2 text-3xl font-bold">{value}</p>
         </div>
         <span className="text-5xl opacity-50">{icon}</span>
       </div>
@@ -194,12 +177,12 @@ function ToolButton({
   return (
     <a
       href={href}
-      className="flex items-start gap-4 p-4 border-2 border-gray-200 rounded-lg hover:border-red-300 hover:bg-red-50 transition-colors"
+      className="flex items-start gap-4 rounded-lg border-2 border-gray-200 p-4 transition-colors hover:border-red-300 hover:bg-red-50"
     >
       <span className="text-4xl">{icon}</span>
       <div>
         <p className="font-semibold text-gray-800">{label}</p>
-        <p className="text-sm text-gray-600 mt-1">{description}</p>
+        <p className="mt-1 text-sm text-gray-600">{description}</p>
       </div>
     </a>
   )

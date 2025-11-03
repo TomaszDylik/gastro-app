@@ -1,6 +1,6 @@
 /**
  * Calculate effective hourly rate based on membership role and current context
- * 
+ *
  * Rules:
  * - If user has manager role AND hourlyRateManager is set, use it when working manager shifts
  * - Otherwise use hourlyRateEmployee
@@ -15,12 +15,7 @@ interface HourlyRateParams {
 }
 
 export function effectiveHourlyRate(params: HourlyRateParams): number {
-  const { 
-    membershipRole, 
-    hourlyRateEmployee, 
-    hourlyRateManager, 
-    workingAsManager = false 
-  } = params
+  const { membershipRole, hourlyRateEmployee, hourlyRateManager, workingAsManager = false } = params
 
   // If working as manager and has manager rate, use it
   if (workingAsManager && membershipRole === 'manager' && hourlyRateManager !== null) {

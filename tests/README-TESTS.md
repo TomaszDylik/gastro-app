@@ -22,7 +22,29 @@
    - 13 test cases
    - Pokrycie: zmiana hasła, preferencje, merge, walidacja, auth
 
-**Łącznie: 32 testy integracyjne dla nowych API endpoints**
+4. **test-api-availability.spec.ts** ✅
+   - Endpoints:
+     - `GET /api/availability`
+     - `PUT /api/availability`
+   - 11 test cases
+   - Pokrycie: grid pustej/zapisanej, częściowy/pełny tydzień, zastępowanie, walidacja
+
+5. **test-api-team.spec.ts** ✅
+   - Endpoint: `GET /api/team`
+   - 11 test cases
+   - Pokrycie: lista członków, statystyki, godziny z adjustmentMinutes, sortowanie, agregacja
+
+6. **test-api-schedules.spec.ts** ✅
+   - Endpoints:
+     - `GET /api/schedules`
+     - `POST /api/schedules`
+     - `GET /api/schedules/[id]`
+     - `PUT /api/schedules/[id]`
+     - `DELETE /api/schedules/[id]`
+   - 16 test cases
+   - Pokrycie: lista, tworzenie, szczegóły, aktualizacja, usuwanie, walidacja
+
+**Łącznie: 59 testów integracyjnych dla API endpoints**
 
 ## Uruchamianie testów
 
@@ -63,6 +85,21 @@
    pnpm test tests/test-api-user-settings.spec.ts
    ```
 
+   **Tylko Availability API:**
+   ```bash
+   pnpm test tests/test-api-availability.spec.ts
+   ```
+
+   **Tylko Team API:**
+   ```bash
+   pnpm test tests/test-api-team.spec.ts
+   ```
+
+   **Tylko Schedules API:**
+   ```bash
+   pnpm test tests/test-api-schedules.spec.ts
+   ```
+
 ## Pokrycie testami
 
 | Endpoint | Metoda | Status | Testy |
@@ -72,7 +109,15 @@
 | `/api/users/me/password` | PUT | ✅ | 5 |
 | `/api/users/me/preferences` | GET | ✅ | 3 |
 | `/api/users/me/preferences` | PUT | ✅ | 5 |
-| **TOTAL** | | | **32** |
+| `/api/availability` | GET | ✅ | 6 |
+| `/api/availability` | PUT | ✅ | 5 |
+| `/api/team` | GET | ✅ | 11 |
+| `/api/schedules` | GET | ✅ | 4 |
+| `/api/schedules` | POST | ✅ | 4 |
+| `/api/schedules/[id]` | GET | ✅ | 2 |
+| `/api/schedules/[id]` | PUT | ✅ | 3 |
+| `/api/schedules/[id]` | DELETE | ✅ | 2 |
+| **TOTAL** | | | **59** |
 
 ## Scenariusze testowe
 

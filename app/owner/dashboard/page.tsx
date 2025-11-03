@@ -76,7 +76,7 @@ export default function OwnerDashboard() {
             <div className="space-y-3">
               {restaurants.map((rest) => (
                 <div key={rest.id} className="flex items-center justify-between rounded-xl bg-white/60 p-6 backdrop-blur-sm transition-all hover:bg-white/80 hover:shadow-lg cursor-pointer"
-                  onClick={() => router.push(`/owner/restaurants/${rest.id}`)}>
+                  onClick={() => router.push(`/owner/restaurants/${rest.id}` as any)}>
                   <div className="flex items-center gap-4">
                     <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center text-white text-3xl shadow-lg">
                       🏪
@@ -100,7 +100,7 @@ export default function OwnerDashboard() {
           <h2 className="mb-4 text-2xl font-bold text-gray-800">⚡ Szybkie akcje</h2>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
             {quickActions.map((action) => (
-              <Card key={action.path} variant="glass" hover glow className="cursor-pointer" onClick={() => router.push(action.path)}>
+              <Card key={action.path} variant="glass" hover glow className="cursor-pointer" onClick={() => router.push(action.path as any)}>
                 <CardBody className="text-center">
                   <div className={`mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br ${action.color} text-3xl text-white shadow-lg`}>
                     {action.icon}

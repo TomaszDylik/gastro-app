@@ -132,14 +132,14 @@ export default function ManagerDashboard() {
             title="Aktywni pracownicy"
             value={stats.activeEmployees}
             icon="👥"
-            trend={{ value: 2, isPositive: true }}
+            trend={{ value: 2, direction: 'up' }}
             variant="gradient"
           />
           <StatCard
             title="Do zatwierdzenia"
             value={stats.pendingApprovals}
             icon="⏳"
-            trend={{ value: 1, isPositive: false }}
+            trend={{ value: 1, direction: 'down' }}
             variant="gradient"
           />
           <StatCard
@@ -203,7 +203,7 @@ export default function ManagerDashboard() {
                 {quickActions.map((action) => (
                   <button
                     key={action.title}
-                    onClick={() => router.push(action.path)}
+                    onClick={() => router.push(action.path as any)}
                     className={`rounded-xl bg-gradient-to-br ${action.color} p-6 text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl`}
                   >
                     <div className="mb-2 text-4xl">{action.icon}</div>

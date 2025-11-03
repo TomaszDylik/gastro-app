@@ -69,7 +69,6 @@ export async function POST(request: NextRequest) {
           authUserId: invite.email, // Temporary - should be from SSO
           name: `${invite.firstName} ${invite.lastName}`,
           email: invite.email,
-          role: invite.role === 'manager' ? 'manager' : 'employee',
           // W produkcji: password hash, SSO integration
         },
       })
@@ -81,7 +80,7 @@ export async function POST(request: NextRequest) {
         userId: user.id,
         restaurantId: invite.restaurantId,
         role: invite.role === 'manager' ? 'manager' : 'employee',
-        hourlyRatePLN: invite.hourlyRate,
+        hourlyRateManagerPLN: invite.hourlyRate,
         status: 'active',
       },
     })
@@ -102,7 +101,7 @@ export async function POST(request: NextRequest) {
         membershipId: membership.id,
         restaurantId: membership.restaurantId,
         role: membership.role,
-        hourlyRate: membership.hourlyRatePLN,
+        hourlyRate: membership.hourlyRateManagerPLN,
         restaurant: {
           id: invite.restaurant.id,
           name: invite.restaurant.name,

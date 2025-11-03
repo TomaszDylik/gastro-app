@@ -15,6 +15,7 @@ model AppUser {
   phone                 String?
   locale                String   @default("pl-PL")
   hourlyRateDefaultPLN  Decimal? @db.Decimal(10,2)
+  preferences           Json?    // User preferences: notifications, theme, etc.
   memberships           Membership[]
   auditLogs             AuditLog[] @relation("AuditActor")
   createdAt             DateTime @default(now())

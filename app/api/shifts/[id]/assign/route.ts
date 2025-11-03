@@ -5,7 +5,7 @@
  *
  * POST /api/shifts/[id]/assign
  * Body: {
- *   userId: string
+ *   membershipId: string
  * }
  */
 
@@ -21,7 +21,7 @@ export async function POST(
   try {
     const { id: shiftId } = params
     const body = await request.json()
-    const { userId } = body
+    const { membershipId } = body
 
     // Mock auth
     const actorUserId = request.headers.get('x-user-id')
@@ -38,8 +38,8 @@ export async function POST(
       })
     }
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Missing userId' }, { status: 400 })
+    if (!membershipId) {
+      return NextResponse.json({ error: 'Missing membershipId' }, { status: 400 })
     }
 
     // Find shift
@@ -73,18 +73,15 @@ export async function POST(
       }
     }
 
-    // Check if employee exists and is member of this restaurant
-    const employeeMembership = await prisma.membership.findFirst({
-      where: {
-        userId,
-        restaurantId: shift.schedule.restaurantId,
-        status: 'active',
-      },
+    // Check if membership exists and is for this restaurant
+    const employeeMembership = await prisma.membership.findUnique({
+      where: { id: membershipId },
+      include: { user: true },
     })
 
-    if (!employeeMembership) {
+    if (!employeeMembership || employeeMembership.restaurantId !== shift.schedule.restaurantId) {
       return NextResponse.json(
-        { error: 'Employee not found or not a member of this restaurant' },
+        { error: 'Membership not found or not for this restaurant' },
         { status: 404 },
       )
     }
@@ -92,7 +89,7 @@ export async function POST(
     // Check for conflicts - employee already assigned to another shift at this time
     const conflictingAssignments = await prisma.shiftAssignment.findMany({
       where: {
-        userId,
+        membershipId,
         status: 'assigned',
         shift: {
           OR: [
@@ -133,15 +130,20 @@ export async function POST(
     const assignment = await prisma.shiftAssignment.create({
       data: {
         shiftId,
-        userId,
+        membershipId,
         status: 'assigned',
       },
       include: {
-        user: {
+        membership: {
           select: {
             id: true,
-            name: true,
-            email: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
           },
         },
         shift: {
@@ -152,7 +154,6 @@ export async function POST(
             schedule: {
               select: {
                 name: true,
-                categoryType: true,
               },
             },
           },
@@ -164,15 +165,18 @@ export async function POST(
       {
         id: assignment.id,
         shiftId: assignment.shiftId,
-        userId: assignment.userId,
+        membershipId: assignment.membershipId,
         status: assignment.status,
-        user: assignment.user,
+        employee: {
+          id: assignment.membership.user.id,
+          name: assignment.membership.user.name,
+          email: assignment.membership.user.email,
+        },
         shift: {
           id: assignment.shift.id,
           start: assignment.shift.start,
           end: assignment.shift.end,
-          category: assignment.shift.schedule.name,
-          categoryType: assignment.shift.schedule.categoryType,
+          scheduleName: assignment.shift.schedule.name,
         },
       },
       { status: 201 },

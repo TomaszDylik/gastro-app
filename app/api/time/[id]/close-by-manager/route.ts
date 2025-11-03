@@ -108,8 +108,8 @@ export async function POST(
       where: { id: timeEntryId },
       data: {
         clockOut: clockOutTime,
-        closedByManager: true,
-        notes: reason,
+        status: 'approved',
+        reason,
       },
     })
 
@@ -120,9 +120,10 @@ export async function POST(
       entityType: 'time_entry',
       entityId: timeEntryId,
       action: 'time_entry.close_by_manager',
-      before: { clockOut: null },
+      before: { clockOut: null, status: timeEntry.status },
       after: {
         clockOut: clockOutTime.toISOString(),
+        status: 'approved',
         reason,
         closedBy: actorUserId,
       },
@@ -134,8 +135,8 @@ export async function POST(
         membershipId: updated.membershipId,
         clockIn: updated.clockIn,
         clockOut: updated.clockOut,
-        closedByManager: updated.closedByManager,
-        notes: updated.notes,
+        status: updated.status,
+        reason: updated.reason,
         employee: {
           id: timeEntry.membership.user.id,
           name: timeEntry.membership.user.name,

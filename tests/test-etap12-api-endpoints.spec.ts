@@ -123,19 +123,18 @@ describe('ETAP 12: API Endpoints', () => {
     let testScheduleId: string
     let testShiftId: string
 
-    it('should create schedule (category)', async () => {
+    it('should create schedule', async () => {
       const schedule = await prisma.schedule.create({
         data: {
           restaurantId: testRestaurantId,
           name: 'Test Kitchen Schedule',
-          categoryType: 'kitchen',
-          color: '#FF0000',
+          isActive: true,
         },
       })
 
       expect(schedule.id).toBeDefined()
       expect(schedule.name).toBe('Test Kitchen Schedule')
-      expect(schedule.categoryType).toBe('kitchen')
+      expect(schedule.isActive).toBe(true)
 
       testScheduleId = schedule.id
     })
@@ -169,7 +168,7 @@ describe('ETAP 12: API Endpoints', () => {
     })
 
     it('should detect overlapping shifts', async () => {
-      // Try to create overlapping shift
+      // Try to find overlapping shifts
       const overlappingShifts = await prisma.shift.findMany({
         where: {
           scheduleId: testScheduleId,
@@ -210,14 +209,14 @@ describe('ETAP 12: API Endpoints', () => {
         const assignment = await prisma.shiftAssignment.create({
           data: {
             shiftId: testShiftId,
-            userId: membership.userId,
+            membershipId: membership.id,
             status: 'assigned',
           },
         })
 
         expect(assignment.id).toBeDefined()
         expect(assignment.shiftId).toBe(testShiftId)
-        expect(assignment.userId).toBe(membership.userId)
+        expect(assignment.membershipId).toBe(membership.id)
         expect(assignment.status).toBe('assigned')
       }
     })
@@ -234,7 +233,7 @@ describe('ETAP 12: API Endpoints', () => {
         // Check for existing assignments in overlapping time
         const conflicts = await prisma.shiftAssignment.findMany({
           where: {
-            userId: membership.userId,
+            membershipId: membership.id,
             status: 'assigned',
             shift: {
               OR: [
@@ -264,12 +263,19 @@ describe('ETAP 12: API Endpoints', () => {
         },
       })
 
-      if (membership) {
+      const schedule = await prisma.schedule.findFirst({
+        where: { restaurantId: testRestaurantId },
+      })
+
+      if (membership && schedule) {
         const timeEntry = await prisma.timeEntry.create({
           data: {
             membershipId: membership.id,
+            scheduleId: schedule.id,
             clockIn: new Date('2025-01-15T09:00:00Z'),
             source: 'manual',
+            status: 'pending',
+            adjustmentMinutes: 0,
           },
         })
 
@@ -280,14 +286,14 @@ describe('ETAP 12: API Endpoints', () => {
           where: { id: timeEntry.id },
           data: {
             clockOut: new Date('2025-01-15T17:00:00Z'),
-            closedByManager: true,
-            notes: 'Closed by manager - employee forgot to clock out',
+            status: 'approved',
+            reason: 'Closed by manager - employee forgot to clock out',
           },
         })
 
         expect(updated.clockOut).toBeDefined()
-        expect(updated.closedByManager).toBe(true)
-        expect(updated.notes).toContain('Closed by manager')
+        expect(updated.status).toBe('approved')
+        expect(updated.reason).toContain('Closed by manager')
       }
     })
 

@@ -5,8 +5,7 @@
  * Body: {
  *   restaurantId: string
  *   name: string
- *   categoryType: 'kitchen' | 'service' | 'bar' | 'cleaning' | 'management'
- *   color?: string
+ *   isActive?: boolean
  * }
  */
 
@@ -18,7 +17,7 @@ const prisma = new PrismaClient()
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { restaurantId, name, categoryType, color } = body
+    const { restaurantId, name, isActive } = body
 
     // Mock auth
     const actorUserId = request.headers.get('x-user-id')
@@ -37,18 +36,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate input
-    if (!restaurantId || !name || !categoryType) {
+    if (!restaurantId || !name) {
       return NextResponse.json(
-        { error: 'Missing required fields: restaurantId, name, categoryType' },
-        { status: 400 },
-      )
-    }
-
-    // Valid category types
-    const validTypes = ['kitchen', 'service', 'bar', 'cleaning', 'management']
-    if (!validTypes.includes(categoryType)) {
-      return NextResponse.json(
-        { error: `Invalid categoryType. Must be one of: ${validTypes.join(', ')}` },
+        { error: 'Missing required fields: restaurantId, name' },
         { status: 400 },
       )
     }
@@ -81,13 +71,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create schedule (category)
+    // Create schedule
     const schedule = await prisma.schedule.create({
       data: {
         restaurantId,
         name,
-        categoryType,
-        color: color || null,
+        isActive: isActive !== undefined ? isActive : true,
       },
     })
 
@@ -96,8 +85,7 @@ export async function POST(request: NextRequest) {
         id: schedule.id,
         restaurantId: schedule.restaurantId,
         name: schedule.name,
-        categoryType: schedule.categoryType,
-        color: schedule.color,
+        isActive: schedule.isActive,
         createdAt: schedule.createdAt,
       },
       { status: 201 },
@@ -124,8 +112,8 @@ export async function GET(request: NextRequest) {
         shifts: {
           select: {
             id: true,
-            startTime: true,
-            endTime: true,
+            start: true,
+            end: true,
           },
         },
       },

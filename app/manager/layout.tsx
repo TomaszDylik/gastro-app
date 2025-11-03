@@ -1,102 +1,102 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
-import Link from 'next/link'
+import { useEffect, useState } from 'react'
+import { Sidebar } from '@/components/navigation/Sidebar'
+import { MobileBottomNav } from '@/components/navigation/MobileBottomNav'
+import { ProfileMenu } from '@/components/navigation/ProfileMenu'
+import { Breadcrumbs } from '@/components/navigation/Breadcrumbs'
 
-const navigation = [
-  { name: 'Dashboard', href: '/manager/dashboard', icon: '🏠' },
-  { name: 'Czas pracy', href: '/manager/time', icon: '⏱️' },
-  { name: 'Grafiki', href: '/manager/schedules', icon: '📅' },
-  { name: 'Zespół', href: '/manager/team', icon: '👥' },
-  { name: 'Raporty', href: '/manager/reports', icon: '📊' },
-  { name: 'Ustawienia', href: '/manager/settings', icon: '⚙️' },
-]
+interface UserData {
+  firstName: string
+  lastName: string
+  email: string
+  role: 'employee' | 'manager' | 'super_admin'
+  restaurantName?: string
+  restaurantId?: string
+  membershipId?: string
+}
 
 export default function ManagerLayout({ children }: { children: ReactNode }) {
-  const pathname = usePathname()
-  const router = useRouter()
+  const [user, setUser] = useState<UserData | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' })
-      router.push('/login')
-    } catch (error) {
-      console.error('Logout error:', error)
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const response = await fetch('/api/auth/me')
+        if (response.ok) {
+          const data = await response.json()
+          setUser({
+            firstName: data.firstName,
+            lastName: data.lastName,
+            email: data.email,
+            role: data.role,
+            restaurantName: data.restaurantName,
+            restaurantId: data.restaurantId,
+            membershipId: data.membershipId,
+          })
+        }
+      } catch (error) {
+        console.error('Error loading user:', error)
+      } finally {
+        setLoading(false)
+      }
     }
+
+    loadUser()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-amber-50">
+        <div className="text-center">
+          <div className="text-4xl mb-4">⏳</div>
+          <div className="text-xl font-semibold text-gray-700">Ładowanie...</div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return null
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Top Navigation */}
-      <header className="sticky top-0 z-50 border-b border-gray-200 bg-white shadow-sm">
-        <div className="container mx-auto px-4">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl font-bold text-blue-600">Gastro Schedules</h1>
-              <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-800">
-                MANAGER
-              </span>
+      {/* Sidebar - Desktop */}
+      <Sidebar userRole={user.role} restaurantId={user.restaurantId} />
+
+      {/* Main Content Area */}
+      <div className="lg:pl-64">
+        {/* Top Header */}
+        <header className="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm">
+          <div className="flex items-center justify-between px-4 py-3">
+            {/* Left: Logo & Breadcrumbs */}
+            <div className="flex items-center gap-4 flex-1 min-w-0">
+              {/* Mobile Logo */}
+              <div className="lg:hidden">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-600 to-amber-600" />
+              </div>
+              {/* Breadcrumbs */}
+              <div className="hidden md:block">
+                <Breadcrumbs userRole={user.role} />
+              </div>
             </div>
 
-            <nav className="hidden items-center gap-1 md:flex">
-              {navigation.map((item) => {
-                const isActive = pathname === item.href || pathname?.startsWith(item.href + '/')
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href as any}
-                    className={`flex items-center gap-2 rounded-lg px-4 py-2 transition-colors ${
-                      isActive
-                        ? 'bg-blue-100 font-medium text-blue-700'
-                        : 'text-gray-600 hover:bg-gray-100'
-                    }`}
-                  >
-                    <span>{item.icon}</span>
-                    <span className="text-sm">{item.name}</span>
-                  </Link>
-                )
-              })}
-            </nav>
-
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 text-gray-600 transition-colors hover:text-red-600"
-            >
-              <span className="hidden text-sm sm:inline">Wyloguj</span>
-              <span>🚪</span>
-            </button>
+            {/* Right: Profile Menu */}
+            <ProfileMenu user={user} />
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Mobile Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white shadow-lg md:hidden">
-        <div className="grid grid-cols-6 gap-1">
-          {navigation.map((item) => {
-            const isActive = pathname === item.href
-            return (
-              <Link
-                key={item.name}
-                href={item.href as any}
-                className={`flex flex-col items-center justify-center px-1 py-2 transition-colors ${
-                  isActive
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-blue-600'
-                }`}
-              >
-                <span className="mb-1 text-xl">{item.icon}</span>
-                <span className="w-full truncate text-center text-xs font-medium">
-                  {item.name.split(' ')[0]}
-                </span>
-              </Link>
-            )
-          })}
-        </div>
-      </nav>
+        {/* Page Content */}
+        <main className="min-h-[calc(100vh-4rem)] pb-20 lg:pb-4">
+          {children}
+        </main>
+      </div>
 
-      {/* Main Content */}
-      <div className="pb-20 md:pb-0">{children}</div>
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav userRole={user.role} restaurantId={user.restaurantId} />
     </div>
   )
 }

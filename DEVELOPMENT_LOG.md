@@ -319,4 +319,48 @@ pnpm test
 
 ---
 
+## 🚀 Update 3 listopada 2025 (Sesja 2) - API Integration Started
+
+### ✅ Ukończone:
+
+**1. API: Time Entries Summary** 
+- ✅ Created `/api/time-entries/summary` endpoint
+  - Accepts `membershipId` and `month` (YYYY-MM) parameters
+  - Returns: summary (totalHours, approvedHours, pendingHours, hourlyRate, earnings)
+  - Returns: weeklyData (breakdown per week with status)
+  - Returns: recentEntries (last 10 time entries)
+  - Handles adjustmentMinutes correctly
+- ✅ Created test file: `tests/test-api-time-entries-summary.spec.ts` (8 test cases)
+- ✅ Integrated with `/app/(employee)/summary/page.tsx`
+  - Added loading state with spinner
+  - Added error handling
+  - Replaced mock data with real API calls
+  - Shows schedule names in entries
+  - Handles null values (entries in progress)
+
+**2. API: Shifts Calendar**
+- ✅ Extended `/api/shifts/route.ts` with GET handler
+  - Accepts `membershipId` and `month` parameters
+  - Returns: shifts array with assignments
+  - Returns: stats (total, confirmed, pending, declined, plannedHours)
+  - Properly maps ShiftAssignment status to UI
+- ✅ Recreated `/app/(employee)/calendar/page.tsx` (was corrupted)
+  - Fully integrated with API
+  - Loading and error states
+  - Calendar grid with month navigation
+  - Stats cards with real data
+  - Upcoming shifts list
+  - Proper status badges
+
+### 📊 Progress: 2/7 API endpoints done (28.5%)
+
+### Następne kroki:
+- [ ] API: User Profile (GET/PUT `/api/users/me`)
+- [ ] API: User Settings (password, preferences)
+- [ ] API: Availability Management
+- [ ] API: Team Management
+- [ ] API: Schedules Management
+
+---
+
 💡 **Pro tip:** Jak wrócisz do projektu, po prostu napisz "Kontynuuj pracę nad gastro app" i GitHub Copilot załaduje cały ten kontekst!

@@ -1,38 +1,107 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { format, startOfMonth } from 'date-fns'
 import { pl } from 'date-fns/locale'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { StatCard } from '@/components/ui/StatCard'
 
+type SummaryData = {
+  summary: {
+    totalHours: number
+    approvedHours: number
+    pendingHours: number
+    hourlyRate: number
+    estimatedEarnings: number
+    approvedEarnings: number
+  }
+  weeklyData: Array<{
+    week: string
+    hours: number
+    earnings: number
+    status: string
+  }>
+  recentEntries: Array<{
+    date: string
+    clockIn: string
+    clockOut: string | null
+    hours: number | null
+    earnings: number | null
+    status: string
+    scheduleName: string
+  }>
+  month: string
+}
+
 export default function SummaryPage() {
   const [currentMonth] = useState(new Date())
+  const [data, setData] = useState<SummaryData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [membershipId, setMembershipId] = useState<string | null>(null)
 
-  const summary = {
-    totalHours: 167.5,
-    approvedHours: 152.0,
-    pendingHours: 15.5,
-    hourlyRate: 35.0,
-    estimatedEarnings: 5337.5,
-    approvedEarnings: 5320.0,
+  useEffect(() => {
+    const loadUserAndData = async () => {
+      try {
+        // Get current user
+        const userRes = await fetch('/api/auth/me')
+        if (!userRes.ok) {
+          throw new Error('Failed to load user data')
+        }
+        const userData = await userRes.json()
+        setMembershipId(userData.membershipId)
+
+        // Fetch summary data
+        const monthParam = format(currentMonth, 'yyyy-MM')
+        const summaryRes = await fetch(
+          `/api/time-entries/summary?membershipId=${userData.membershipId}&month=${monthParam}`
+        )
+        
+        if (!summaryRes.ok) {
+          throw new Error('Failed to load summary data')
+        }
+        
+        const summaryData = await summaryRes.json()
+        setData(summaryData)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadUserAndData()
+  }, [currentMonth])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50 p-4 md:p-8 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-4xl mb-4">⏳</div>
+          <div className="text-xl font-semibold text-gray-700">Ładowanie podsumowania...</div>
+        </div>
+      </div>
+    )
   }
 
-  const weeklyData = [
-    { week: 'Tydzień 1', hours: 42.5, earnings: 1487.5, status: 'approved' },
-    { week: 'Tydzień 2', hours: 40.0, earnings: 1400.0, status: 'approved' },
-    { week: 'Tydzień 3', hours: 38.0, earnings: 1330.0, status: 'approved' },
-    { week: 'Tydzień 4', hours: 39.0, earnings: 1365.0, status: 'approved' },
-    { week: 'Tydzień 5', hours: 8.0, earnings: 280.0, status: 'pending' },
-  ]
+  if (error || !data) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50 p-4 md:p-8 flex items-center justify-center">
+        <Card variant="glass" className="max-w-md">
+          <CardBody>
+            <div className="text-center">
+              <div className="text-4xl mb-4">❌</div>
+              <div className="text-xl font-semibold text-red-600 mb-2">Błąd ładowania</div>
+              <div className="text-gray-600">{error || 'Nie udało się załadować danych'}</div>
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+    )
+  }
 
-  const recentEntries = [
-    { date: '2025-11-03', clockIn: '09:00', clockOut: '17:30', hours: 8.5, status: 'pending' },
-    { date: '2025-11-02', clockIn: '09:15', clockOut: '17:45', hours: 8.5, status: 'approved' },
-    { date: '2025-11-01', clockIn: '09:00', clockOut: '17:00', hours: 8.0, status: 'approved' },
-    { date: '2025-10-31', clockIn: '09:30', clockOut: '17:30', hours: 8.0, status: 'approved' },
-  ]
+  const { summary, weeklyData, recentEntries } = data
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50 p-4 md:p-8">
@@ -100,21 +169,37 @@ export default function SummaryPage() {
           </CardHeader>
           <CardBody>
             <div className="space-y-2">
-              {recentEntries.map((entry, idx) => (
-                <div key={idx} className="flex items-center justify-between rounded-lg bg-white/50 p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="text-2xl">{entry.status === 'approved' ? '✅' : '⏳'}</div>
-                    <div>
-                      <div className="font-semibold">{format(new Date(entry.date), 'd MMM yyyy', { locale: pl })}</div>
-                      <div className="text-sm text-gray-600">{entry.clockIn} - {entry.clockOut}</div>
+              {recentEntries.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <div className="text-4xl mb-2">📋</div>
+                  <div>Brak wpisów w tym miesiącu</div>
+                </div>
+              ) : (
+                recentEntries.map((entry, idx) => (
+                  <div key={idx} className="flex items-center justify-between rounded-lg bg-white/50 p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="text-2xl">{entry.status === 'approved' ? '✅' : entry.status === 'pending' ? '⏳' : '🔄'}</div>
+                      <div>
+                        <div className="font-semibold">{format(new Date(entry.date), 'd MMM yyyy', { locale: pl })}</div>
+                        <div className="text-sm text-gray-600">
+                          {entry.clockIn} - {entry.clockOut || 'w trakcie'}
+                        </div>
+                        <div className="text-xs text-gray-500">{entry.scheduleName}</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      {entry.hours !== null ? (
+                        <>
+                          <div className="font-bold text-lg">{entry.hours.toFixed(1)}h</div>
+                          <div className="text-sm text-gray-600">{(entry.hours * summary.hourlyRate).toFixed(2)} zł</div>
+                        </>
+                      ) : (
+                        <div className="text-sm text-gray-500">w trakcie</div>
+                      )}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="font-bold text-lg">{entry.hours.toFixed(1)}h</div>
-                    <div className="text-sm text-gray-600">{(entry.hours * summary.hourlyRate).toFixed(2)} zł</div>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </CardBody>
         </Card>

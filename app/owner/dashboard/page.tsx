@@ -39,8 +39,8 @@ export default function OwnerDashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-purple-600 text-lg">Ładowanie dashboard...</div>
+      <div className="flex h-64 items-center justify-center">
+        <div className="text-lg text-purple-600">Ładowanie dashboard...</div>
       </div>
     )
   }
@@ -48,40 +48,16 @@ export default function OwnerDashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold text-gray-800">
-          Witaj, {userName || 'Właścicielu'}! 👋
-        </h2>
-        <p className="text-gray-600 mt-2">
-          Przegląd wszystkich firm i restauracji w systemie
-        </p>
+        <h2 className="text-3xl font-bold text-gray-800">Witaj, {userName || 'Właścicielu'}! 👋</h2>
+        <p className="mt-2 text-gray-600">Przegląd wszystkich firm i restauracji w systemie</p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <StatCard
-          icon="🏭"
-          title="Firmy"
-          value={stats?.totalCompanies || 0}
-          color="purple"
-        />
-        <StatCard
-          icon="🍽️"
-          title="Restauracje"
-          value={stats?.totalRestaurants || 0}
-          color="blue"
-        />
-        <StatCard
-          icon="👔"
-          title="Managerowie"
-          value={stats?.totalManagers || 0}
-          color="green"
-        />
-        <StatCard
-          icon="👥"
-          title="Pracownicy"
-          value={stats?.totalEmployees || 0}
-          color="orange"
-        />
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <StatCard icon="🏭" title="Firmy" value={stats?.totalCompanies || 0} color="purple" />
+        <StatCard icon="🍽️" title="Restauracje" value={stats?.totalRestaurants || 0} color="blue" />
+        <StatCard icon="👔" title="Managerowie" value={stats?.totalManagers || 0} color="green" />
+        <StatCard icon="👥" title="Pracownicy" value={stats?.totalEmployees || 0} color="orange" />
         <StatCard
           icon="⏰"
           title="Aktywne zmiany dziś"
@@ -97,31 +73,13 @@ export default function OwnerDashboardPage() {
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-xl font-semibold text-gray-800 mb-4">
-          Szybkie akcje
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <QuickActionButton
-            icon="🏭"
-            label="Dodaj nową firmę"
-            href="/owner/companies/new"
-          />
-          <QuickActionButton
-            icon="👔"
-            label="Zaproś managera"
-            href="/owner/managers/invite"
-          />
-          <QuickActionButton
-            icon="📊"
-            label="Raporty tygodniowe"
-            href="/owner/reports/weekly"
-          />
-          <QuickActionButton
-            icon="📈"
-            label="Raporty miesięczne"
-            href="/owner/reports/monthly"
-          />
+      <div className="rounded-lg bg-white p-6 shadow-md">
+        <h3 className="mb-4 text-xl font-semibold text-gray-800">Szybkie akcje</h3>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <QuickActionButton icon="🏭" label="Dodaj nową firmę" href="/owner/companies/new" />
+          <QuickActionButton icon="👔" label="Zaproś managera" href="/owner/managers/invite" />
+          <QuickActionButton icon="📊" label="Raporty tygodniowe" href="/owner/reports/weekly" />
+          <QuickActionButton icon="📈" label="Raporty miesięczne" href="/owner/reports/monthly" />
         </div>
       </div>
     </div>
@@ -150,13 +108,11 @@ function StatCard({
   }
 
   return (
-    <div
-      className={`border-2 rounded-lg p-6 ${colorClasses[color as keyof typeof colorClasses]}`}
-    >
+    <div className={`rounded-lg border-2 p-6 ${colorClasses[color as keyof typeof colorClasses]}`}>
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium opacity-80">{title}</p>
-          <p className="text-3xl font-bold mt-2">{value}</p>
+          <p className="mt-2 text-3xl font-bold">{value}</p>
         </div>
         <span className="text-5xl opacity-50">{icon}</span>
       </div>
@@ -165,19 +121,11 @@ function StatCard({
 }
 
 // Quick Action Button
-function QuickActionButton({
-  icon,
-  label,
-  href,
-}: {
-  icon: string
-  label: string
-  href: string
-}) {
+function QuickActionButton({ icon, label, href }: { icon: string; label: string; href: string }) {
   return (
     <a
       href={href}
-      className="flex items-center gap-3 p-4 border-2 border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-colors"
+      className="flex items-center gap-3 rounded-lg border-2 border-gray-200 p-4 transition-colors hover:border-purple-300 hover:bg-purple-50"
     >
       <span className="text-3xl">{icon}</span>
       <span className="font-medium text-gray-700">{label}</span>

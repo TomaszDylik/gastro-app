@@ -3,12 +3,12 @@ import Papa from 'papaparse'
 
 /**
  * Export formats for Polish reports
- * 
+ *
  * Format PL (detailed - daily):
  * id_pracownika, imie_nazwisko, id_restauracji, nazwa_restauracji,
  * data, wejscie, wyjscie, godziny, stawka_pln, kwota_pln,
  * zrodlo, zatwierdzil, zatwierdzone_o, uwagi
- * 
+ *
  * Format PL (monthly aggregate):
  * id_pracownika, imie_nazwisko, id_restauracji, nazwa_restauracji,
  * miesiac, suma_godzin, stawka_pln, suma_kwota_pln
@@ -53,7 +53,7 @@ export function generateCSV<T extends Record<string, any>>(data: T[]): string {
   const csv = Papa.unparse(data, {
     header: true,
     delimiter: ',',
-    newline: '\n'
+    newline: '\n',
   })
 
   return csv
@@ -76,7 +76,7 @@ export function generateXLSX<T extends Record<string, any>>(
   // Generate buffer
   const buffer = XLSX.write(workbook, {
     type: 'buffer',
-    bookType: 'xlsx'
+    bookType: 'xlsx',
   })
 
   return buffer
@@ -113,17 +113,19 @@ export function formatDailyExport(params: {
 }): DailyExportRow[] {
   const { timeEntries, approverNames = new Map() } = params
 
-  return timeEntries.map(entry => {
+  return timeEntries.map((entry) => {
     const userName = entry.membership.user.name || entry.membership.user.email || 'Unknown'
     const restaurantName = entry.membership.restaurant.name
 
     // Calculate hours
     const hours = entry.clockOut
-      ? (entry.clockOut.getTime() - entry.clockIn.getTime()) / (1000 * 60 * 60) + entry.adjustmentMinutes / 60
+      ? (entry.clockOut.getTime() - entry.clockIn.getTime()) / (1000 * 60 * 60) +
+        entry.adjustmentMinutes / 60
       : 0
 
     // Get effective rate
-    const rate = entry.membership.hourlyRateManagerPLN || entry.membership.user.hourlyRateDefaultPLN || 0
+    const rate =
+      entry.membership.hourlyRateManagerPLN || entry.membership.user.hourlyRateDefaultPLN || 0
 
     const amount = hours * Number(rate)
 
@@ -134,14 +136,17 @@ export function formatDailyExport(params: {
       nazwa_restauracji: restaurantName,
       data: entry.clockIn.toISOString().split('T')[0],
       wejscie: entry.clockIn.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }),
-      wyjscie: entry.clockOut?.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }) || '',
+      wyjscie:
+        entry.clockOut?.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }) || '',
       godziny: Math.round(hours * 100) / 100,
       stawka_pln: Math.round(Number(rate) * 100) / 100,
       kwota_pln: Math.round(amount * 100) / 100,
       zrodlo: entry.source,
-      zatwierdzil: entry.approvedByUserId ? approverNames.get(entry.approvedByUserId) || entry.approvedByUserId : null,
+      zatwierdzil: entry.approvedByUserId
+        ? approverNames.get(entry.approvedByUserId) || entry.approvedByUserId
+        : null,
       zatwierdzone_o: entry.approvedAt?.toISOString() || null,
-      uwagi: entry.reason
+      uwagi: entry.reason,
     }
   })
 }
@@ -163,7 +168,7 @@ export function formatMonthlyExport(params: {
 }): MonthlyExportRow[] {
   const { restaurantId, restaurantName, monthlyData, month } = params
 
-  return monthlyData.map(emp => ({
+  return monthlyData.map((emp) => ({
     id_pracownika: emp.userId,
     imie_nazwisko: emp.userName,
     id_restauracji: restaurantId,
@@ -171,6 +176,6 @@ export function formatMonthlyExport(params: {
     miesiac: month,
     suma_godzin: Math.round(emp.totalHours * 100) / 100,
     stawka_pln: Math.round(emp.hourlyRate * 100) / 100,
-    suma_kwota_pln: Math.round(emp.totalAmount * 100) / 100
+    suma_kwota_pln: Math.round(emp.totalAmount * 100) / 100,
   }))
 }

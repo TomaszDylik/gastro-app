@@ -6,7 +6,7 @@ const prisma = new PrismaClient()
 
 /**
  * GET /api/reports/monthly/export?restaurantId=xxx&periodMonth=YYYY-MM-01&format=csv|xlsx
- * 
+ *
  * Export monthly report as CSV or XLSX
  */
 export async function GET(request: NextRequest) {
@@ -24,10 +24,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (format !== 'csv' && format !== 'xlsx') {
-      return NextResponse.json(
-        { error: 'format must be csv or xlsx' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'format must be csv or xlsx' }, { status: 400 })
     }
 
     // Get monthly report
@@ -38,19 +35,16 @@ export async function GET(request: NextRequest) {
       where: {
         restaurantId_periodMonth: {
           restaurantId,
-          periodMonth: monthDate
-        }
+          periodMonth: monthDate,
+        },
       },
       include: {
-        restaurant: true
-      }
+        restaurant: true,
+      },
     })
 
     if (!monthlyReport) {
-      return NextResponse.json(
-        { error: 'Monthly report not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Monthly report not found' }, { status: 404 })
     }
 
     const totals: any = monthlyReport.totalsJson
@@ -65,9 +59,9 @@ export async function GET(request: NextRequest) {
         userName: emp.userName,
         totalHours: emp.totalHours,
         totalAmount: emp.totalAmount,
-        hourlyRate: emp.totalHours > 0 ? emp.totalAmount / emp.totalHours : 0
+        hourlyRate: emp.totalHours > 0 ? emp.totalAmount / emp.totalHours : 0,
       })),
-      month: totals.monthName || periodMonth
+      month: totals.monthName || periodMonth,
     })
 
     const filename = `raport_miesięczny_${restaurantName.replace(/\s+/g, '_')}_${periodMonth}.${format}`
@@ -81,8 +75,8 @@ export async function GET(request: NextRequest) {
         headers: {
           'Content-Type': 'text/csv; charset=utf-8',
           'Content-Disposition': `attachment; filename="${filename}"`,
-          'Cache-Control': 'no-cache'
-        }
+          'Cache-Control': 'no-cache',
+        },
       })
     } else {
       // XLSX
@@ -93,16 +87,12 @@ export async function GET(request: NextRequest) {
         headers: {
           'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           'Content-Disposition': `attachment; filename="${filename}"`,
-          'Cache-Control': 'no-cache'
-        }
+          'Cache-Control': 'no-cache',
+        },
       })
     }
-
   } catch (error) {
     console.error('❌ Monthly export error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

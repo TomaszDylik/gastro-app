@@ -11,13 +11,13 @@ export async function GET() {
     const cookieStore = cookies()
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Nie zalogowano' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Nie zalogowano' }, { status: 401 })
     }
 
     // 2. Pobierz dane użytkownika z Prisma
@@ -27,22 +27,19 @@ export async function GET() {
         memberships: {
           where: { status: 'active' },
           include: {
-            restaurant: true
-          }
-        }
-      }
+            restaurant: true,
+          },
+        },
+      },
     })
 
     if (!appUser) {
-      return NextResponse.json(
-        { error: 'Użytkownik nie istnieje w bazie danych' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Użytkownik nie istnieje w bazie danych' }, { status: 404 })
     }
 
     // 3. Znajdź aktywny membership (zakładamy pierwszą restaurację)
     const activeMembership = appUser.memberships[0]
-    
+
     if (!activeMembership) {
       return NextResponse.json(
         { error: 'Użytkownik nie jest przypisany do żadnej restauracji' },
@@ -60,14 +57,10 @@ export async function GET() {
       role: activeMembership.role,
       restaurantId: activeMembership.restaurantId,
       restaurantName: activeMembership.restaurant.name,
-      membershipId: activeMembership.id
+      membershipId: activeMembership.id,
     })
-
   } catch (error) {
     console.error('Error fetching user data:', error)
-    return NextResponse.json(
-      { error: 'Błąd serwera' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Błąd serwera' }, { status: 500 })
   }
 }

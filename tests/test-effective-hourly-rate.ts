@@ -13,7 +13,7 @@ const result1 = effectiveHourlyRate({
   userDefaultRate: new Decimal(35),
   membershipManagerRate: null,
   membershipRole: 'employee',
-  workingAsManager: false
+  workingAsManager: false,
 })
 console.log('  Result:', result1, 'PLN')
 console.assert(result1 === 35, 'Should return default rate')
@@ -25,7 +25,7 @@ const result2 = effectiveHourlyRate({
   userDefaultRate: new Decimal(35),
   membershipManagerRate: new Decimal(50),
   membershipRole: 'manager',
-  workingAsManager: true
+  workingAsManager: true,
 })
 console.log('  Result:', result2, 'PLN')
 console.assert(result2 === 50, 'Should return manager rate')
@@ -37,7 +37,7 @@ const result3 = effectiveHourlyRate({
   userDefaultRate: new Decimal(35),
   membershipManagerRate: new Decimal(50),
   membershipRole: 'manager',
-  workingAsManager: false
+  workingAsManager: false,
 })
 console.log('  Result:', result3, 'PLN')
 console.assert(result3 === 35, 'Should return default rate when not working as manager')
@@ -49,7 +49,7 @@ const result4 = effectiveHourlyRate({
   userDefaultRate: new Decimal(40),
   membershipManagerRate: new Decimal(60),
   membershipRole: 'owner',
-  workingAsManager: true
+  workingAsManager: true,
 })
 console.log('  Result:', result4, 'PLN')
 console.assert(result4 === 60, 'Should return manager rate for owner')
@@ -61,7 +61,7 @@ const result5 = effectiveHourlyRate({
   userDefaultRate: null,
   membershipManagerRate: null,
   membershipRole: 'employee',
-  workingAsManager: false
+  workingAsManager: false,
 })
 console.log('  Result:', result5, 'PLN')
 console.assert(result5 === 0, 'Should return 0 when no rates set')
@@ -73,7 +73,7 @@ const result6 = effectiveHourlyRate({
   userDefaultRate: null,
   membershipManagerRate: new Decimal(50),
   membershipRole: 'manager',
-  workingAsManager: false
+  workingAsManager: false,
 })
 console.log('  Result:', result6, 'PLN')
 console.assert(result6 === 0, 'Should return 0 when no default rate and not working as manager')
@@ -85,7 +85,7 @@ const result7 = effectiveHourlyRate({
   userDefaultRate: new Decimal(30),
   membershipManagerRate: new Decimal(50),
   membershipRole: 'employee',
-  workingAsManager: true  // Even if true, employee can't use manager rate
+  workingAsManager: true, // Even if true, employee can't use manager rate
 })
 console.log('  Result:', result7, 'PLN')
 console.assert(result7 === 30, 'Employee should use default rate regardless of workingAsManager')
@@ -97,7 +97,7 @@ const result8 = effectiveHourlyRate({
   userDefaultRate: new Decimal(100),
   membershipManagerRate: new Decimal(80),
   membershipRole: 'super_admin',
-  workingAsManager: true
+  workingAsManager: true,
 })
 console.log('  Result:', result8, 'PLN')
 console.assert(result8 === 100, 'Super admin should use default rate')

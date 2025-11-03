@@ -9,34 +9,30 @@ export const dynamic = 'force-dynamic'
 
 /**
  * POST /api/reports/daily/sign
- * 
+ *
  * Sign a daily report (manager/owner only)
- * 
+ *
  * Body: { reportId }
  */
 export async function POST(request: NextRequest) {
   try {
     // 1. Authenticate
     const supabase = createRouteHandlerClient({ cookies })
-    const { data: { session } } = await supabase.auth.getSession()
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
 
     if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // 2. Get user
     const user = await prisma.appUser.findUnique({
-      where: { authUserId: session.user.id }
+      where: { authUserId: session.user.id },
     })
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     // 3. Parse request
@@ -44,22 +40,16 @@ export async function POST(request: NextRequest) {
     const { reportId } = body
 
     if (!reportId) {
-      return NextResponse.json(
-        { error: 'Missing required field: reportId' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Missing required field: reportId' }, { status: 400 })
     }
 
     // 4. Get report
     const report = await prisma.reportDaily.findUnique({
-      where: { id: reportId }
+      where: { id: reportId },
     })
 
     if (!report) {
-      return NextResponse.json(
-        { error: 'Report not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Report not found' }, { status: 404 })
     }
 
     // 5. Check permission
@@ -69,9 +59,9 @@ export async function POST(request: NextRequest) {
         restaurantId: report.restaurantId,
         status: 'active',
         role: {
-          in: ['owner', 'manager', 'super_admin']
-        }
-      }
+          in: ['owner', 'manager', 'super_admin'],
+        },
+      },
     })
 
     if (!membership) {
@@ -83,10 +73,7 @@ export async function POST(request: NextRequest) {
 
     // 6. Check if already signed
     if (report.signedByUserId && report.signedAt) {
-      return NextResponse.json(
-        { error: 'Report already signed' },
-        { status: 409 }
-      )
+      return NextResponse.json({ error: 'Report already signed' }, { status: 409 })
     }
 
     // 7. Sign report and log action
@@ -94,18 +81,20 @@ export async function POST(request: NextRequest) {
       action: 'signed',
       byUserId: user.id,
       byUserName: user.name,
-      at: new Date().toISOString()
+      at: new Date().toISOString(),
     }
 
-    const currentLog = Array.isArray(report.signatureLogJson) ? report.signatureLogJson as any[] : []
+    const currentLog = Array.isArray(report.signatureLogJson)
+      ? (report.signatureLogJson as any[])
+      : []
 
     const updatedReport = await prisma.reportDaily.update({
       where: { id: reportId },
       data: {
         signedByUserId: user.id,
         signedAt: new Date(),
-        signatureLogJson: [...currentLog, signatureEntry]
-      }
+        signatureLogJson: [...currentLog, signatureEntry],
+      },
     })
 
     // 8. Create audit log
@@ -116,8 +105,8 @@ export async function POST(request: NextRequest) {
         entityType: 'ReportDaily',
         entityId: reportId,
         action: 'sign_report',
-        after: { signedAt: new Date().toISOString() }
-      }
+        after: { signedAt: new Date().toISOString() },
+      },
     })
 
     return NextResponse.json({
@@ -125,16 +114,12 @@ export async function POST(request: NextRequest) {
         id: updatedReport.id,
         signedByUserId: updatedReport.signedByUserId,
         signedAt: updatedReport.signedAt?.toISOString(),
-        signatureLog: updatedReport.signatureLogJson
-      }
+        signatureLog: updatedReport.signatureLogJson,
+      },
     })
-
   } catch (error) {
     console.error('Error signing report:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   } finally {
     await prisma.$disconnect()
   }

@@ -1,6 +1,6 @@
 /**
  * ETAP 4 Integration Tests: Schedule Categories and Shift Overlap Validation
- * 
+ *
  * Tests:
  * 1. Create multiple schedule categories (max 5 per restaurant)
  * 2. Create shifts in different categories
@@ -10,11 +10,11 @@
  */
 
 import { PrismaClient } from '@prisma/client'
-import { 
-  doTimeRangesOverlap, 
-  checkShiftOverlap, 
+import {
+  doTimeRangesOverlap,
+  checkShiftOverlap,
   validateShiftTimes,
-  calculateActualHours 
+  calculateActualHours,
 } from '../lib/shift-overlap-validation'
 
 const prisma = new PrismaClient()
@@ -25,20 +25,20 @@ async function main() {
   try {
     // Setup: Get test data
     const restaurant = await prisma.restaurant.findFirst({
-      where: { name: 'Pod Gruszą' }
+      where: { name: 'Pod Gruszą' },
     })
     if (!restaurant) throw new Error('Restaurant "Pod Gruszą" not found')
 
     const employee = await prisma.appUser.findFirst({
-      where: { email: 'employee1@gmail.pl' }
+      where: { email: 'employee1@gmail.pl' },
     })
     if (!employee) throw new Error('Employee not found')
 
     const membership = await prisma.membership.findFirst({
       where: {
         restaurantId: restaurant.id,
-        userId: employee.id
-      }
+        userId: employee.id,
+      },
     })
     if (!membership) throw new Error('Membership not found')
 
@@ -49,25 +49,39 @@ async function main() {
 
     // Cleanup: Delete test data
     await prisma.shiftAssignment.deleteMany({
-      where: { membershipId: membership.id }
+      where: { membershipId: membership.id },
     })
     await prisma.shift.deleteMany({
       where: {
         schedule: {
           restaurantId: restaurant.id,
           name: {
-            in: ['Test - Kelnerzy', 'Test - Kuchnia', 'Test - Sprzątanie', 'Test - Bar', 'Test - Recepcja', 'Test - Extra']
-          }
-        }
-      }
+            in: [
+              'Test - Kelnerzy',
+              'Test - Kuchnia',
+              'Test - Sprzątanie',
+              'Test - Bar',
+              'Test - Recepcja',
+              'Test - Extra',
+            ],
+          },
+        },
+      },
     })
     await prisma.schedule.deleteMany({
       where: {
         restaurantId: restaurant.id,
         name: {
-          in: ['Test - Kelnerzy', 'Test - Kuchnia', 'Test - Sprzątanie', 'Test - Bar', 'Test - Recepcja', 'Test - Extra']
-        }
-      }
+          in: [
+            'Test - Kelnerzy',
+            'Test - Kuchnia',
+            'Test - Sprzątanie',
+            'Test - Bar',
+            'Test - Recepcja',
+            'Test - Extra',
+          ],
+        },
+      },
     })
 
     console.log('🧹 Cleaned up existing test data\n')
@@ -80,7 +94,7 @@ async function main() {
       { name: 'Test - Kuchnia', description: 'Kitchen' },
       { name: 'Test - Sprzątanie', description: 'Cleaning' },
       { name: 'Test - Bar', description: 'Bar staff' },
-      { name: 'Test - Recepcja', description: 'Reception' }
+      { name: 'Test - Recepcja', description: 'Reception' },
     ]
 
     const createdSchedules = []
@@ -89,8 +103,8 @@ async function main() {
         data: {
           restaurantId: restaurant.id,
           name: cat.name,
-          isActive: true
-        }
+          isActive: true,
+        },
       })
       createdSchedules.push(schedule)
     }
@@ -105,8 +119,8 @@ async function main() {
       data: {
         restaurantId: restaurant.id,
         name: 'Test - Extra',
-        isActive: false  // Created but marked inactive
-      }
+        isActive: false, // Created but marked inactive
+      },
     })
     console.log(`  ⚠️  Created 6th category (marked inactive): ${sixthSchedule.name}`)
     console.log('    Note: UI should limit to 5 active categories\n')
@@ -121,8 +135,8 @@ async function main() {
       data: {
         scheduleId: createdSchedules[0].id, // Kelnerzy
         start: new Date(baseDate.getTime() + 9 * 60 * 60 * 1000),
-        end: new Date(baseDate.getTime() + 17 * 60 * 60 * 1000)
-      }
+        end: new Date(baseDate.getTime() + 17 * 60 * 60 * 1000),
+      },
     })
 
     // Assign to employee
@@ -130,8 +144,8 @@ async function main() {
       data: {
         shiftId: shift1.id,
         membershipId: membership.id,
-        status: 'assigned'
-      }
+        status: 'assigned',
+      },
     })
 
     console.log(`  ✅ Shift 1 (Kelnerzy): 09:00-17:00`)
@@ -142,28 +156,30 @@ async function main() {
 
     // Test 3.1: Overlapping shift (should fail)
     console.log('  Test 3.1: Overlapping shift (15:00-20:00) → should detect overlap')
-    
+
     const overlapResult1 = await checkShiftOverlap({
       membershipId: membership.id,
       newShiftStart: new Date(baseDate.getTime() + 15 * 60 * 60 * 1000),
-      newShiftEnd: new Date(baseDate.getTime() + 20 * 60 * 60 * 1000)
+      newShiftEnd: new Date(baseDate.getTime() + 20 * 60 * 60 * 1000),
     })
 
     if (overlapResult1.hasOverlap) {
       console.log(`    ✅ Overlap detected correctly!`)
       console.log(`       Conflicting shift: ${overlapResult1.conflictingShift!.scheduleName}`)
-      console.log(`       Times: ${overlapResult1.conflictingShift!.start.toISOString().substring(11, 16)} - ${overlapResult1.conflictingShift!.end.toISOString().substring(11, 16)}`)
+      console.log(
+        `       Times: ${overlapResult1.conflictingShift!.start.toISOString().substring(11, 16)} - ${overlapResult1.conflictingShift!.end.toISOString().substring(11, 16)}`
+      )
     } else {
       throw new Error('Should have detected overlap!')
     }
 
     // Test 3.2: Non-overlapping shift (should pass)
     console.log('\n  Test 3.2: Non-overlapping shift (17:00-22:00) → should pass')
-    
+
     const overlapResult2 = await checkShiftOverlap({
       membershipId: membership.id,
       newShiftStart: new Date(baseDate.getTime() + 17 * 60 * 60 * 1000),
-      newShiftEnd: new Date(baseDate.getTime() + 22 * 60 * 60 * 1000)
+      newShiftEnd: new Date(baseDate.getTime() + 22 * 60 * 60 * 1000),
     })
 
     if (!overlapResult2.hasOverlap) {
@@ -174,11 +190,11 @@ async function main() {
 
     // Test 3.3: Exact boundary (17:00 end, 17:00 start) → should pass (half-open interval)
     console.log('\n  Test 3.3: Exact boundary touch (09:00-17:00 then 17:00-22:00) → should pass')
-    
+
     const overlapResult3 = await checkShiftOverlap({
       membershipId: membership.id,
       newShiftStart: new Date(baseDate.getTime() + 17 * 60 * 60 * 1000),
-      newShiftEnd: new Date(baseDate.getTime() + 22 * 60 * 60 * 1000)
+      newShiftEnd: new Date(baseDate.getTime() + 22 * 60 * 60 * 1000),
     })
 
     if (!overlapResult3.hasOverlap) {
@@ -198,16 +214,16 @@ async function main() {
       data: {
         scheduleId: createdSchedules[1].id, // Kuchnia
         start: midnightShiftStart,
-        end: midnightShiftEnd
-      }
+        end: midnightShiftEnd,
+      },
     })
 
     await prisma.shiftAssignment.create({
       data: {
         shiftId: shift2.id,
         membershipId: membership.id,
-        status: 'assigned'
-      }
+        status: 'assigned',
+      },
     })
 
     console.log(`  ✅ Created midnight-crossing shift: 22:00 Jan 21 → 02:00 Jan 22`)
@@ -216,7 +232,7 @@ async function main() {
     const midnightOverlap = await checkShiftOverlap({
       membershipId: membership.id,
       newShiftStart: new Date('2025-01-22T01:00:00Z'),
-      newShiftEnd: new Date('2025-01-22T05:00:00Z')
+      newShiftEnd: new Date('2025-01-22T05:00:00Z'),
     })
 
     if (midnightOverlap.hasOverlap) {
@@ -271,38 +287,38 @@ async function main() {
         name: 'Complete overlap',
         range1: { start: new Date('2025-01-20T10:00:00Z'), end: new Date('2025-01-20T18:00:00Z') },
         range2: { start: new Date('2025-01-20T12:00:00Z'), end: new Date('2025-01-20T16:00:00Z') },
-        expected: true
+        expected: true,
       },
       {
         name: 'Partial overlap (end)',
         range1: { start: new Date('2025-01-20T10:00:00Z'), end: new Date('2025-01-20T15:00:00Z') },
         range2: { start: new Date('2025-01-20T14:00:00Z'), end: new Date('2025-01-20T18:00:00Z') },
-        expected: true
+        expected: true,
       },
       {
         name: 'Partial overlap (start)',
         range1: { start: new Date('2025-01-20T14:00:00Z'), end: new Date('2025-01-20T18:00:00Z') },
         range2: { start: new Date('2025-01-20T10:00:00Z'), end: new Date('2025-01-20T15:00:00Z') },
-        expected: true
+        expected: true,
       },
       {
         name: 'No overlap (before)',
         range1: { start: new Date('2025-01-20T10:00:00Z'), end: new Date('2025-01-20T14:00:00Z') },
         range2: { start: new Date('2025-01-20T14:00:00Z'), end: new Date('2025-01-20T18:00:00Z') },
-        expected: false
+        expected: false,
       },
       {
         name: 'No overlap (after)',
         range1: { start: new Date('2025-01-20T14:00:00Z'), end: new Date('2025-01-20T18:00:00Z') },
         range2: { start: new Date('2025-01-20T10:00:00Z'), end: new Date('2025-01-20T14:00:00Z') },
-        expected: false
+        expected: false,
       },
       {
         name: 'Exact same times',
         range1: { start: new Date('2025-01-20T10:00:00Z'), end: new Date('2025-01-20T18:00:00Z') },
         range2: { start: new Date('2025-01-20T10:00:00Z'), end: new Date('2025-01-20T18:00:00Z') },
-        expected: true
-      }
+        expected: true,
+      },
     ]
 
     let unitTestsPassed = 0
@@ -323,10 +339,7 @@ async function main() {
     console.log('\n✅ TEST 7: Shift Times Validation')
 
     try {
-      validateShiftTimes(
-        new Date('2025-01-20T17:00:00Z'),
-        new Date('2025-01-20T09:00:00Z')
-      )
+      validateShiftTimes(new Date('2025-01-20T17:00:00Z'), new Date('2025-01-20T09:00:00Z'))
       throw new Error('Should have thrown error for end before start')
     } catch (error: any) {
       if (error.message.includes('start must be before end')) {
@@ -360,7 +373,6 @@ async function main() {
     console.log('  ✓ Time range overlap logic (6/6 unit tests)')
     console.log('  ✓ Shift time validation (2/2 edge cases)')
     console.log()
-
   } catch (error) {
     console.error('❌ Test failed:', error)
     process.exit(1)

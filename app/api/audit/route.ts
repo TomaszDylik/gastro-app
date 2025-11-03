@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     // TODO: Get user from session/auth
     // For now, mock check - in production use actual auth
     const userRole = request.headers.get('x-user-role') || 'employee'
-    
+
     if (!canAccessAuditLogs(userRole)) {
       return NextResponse.json(
         { error: 'Forbidden: Only admins and owners can access audit logs' },
@@ -40,9 +40,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(result)
   } catch (error) {
     console.error('Error fetching audit logs:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch audit logs' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch audit logs' }, { status: 500 })
   }
 }

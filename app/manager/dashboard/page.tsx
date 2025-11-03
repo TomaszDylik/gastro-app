@@ -29,7 +29,7 @@ export default function ManagerDashboard() {
     activeEmployees: 0,
     pendingApprovals: 0,
     schedulesCount: 0,
-    todayShifts: 0
+    todayShifts: 0,
   })
   const [loading, setLoading] = useState(true)
 
@@ -54,7 +54,7 @@ export default function ManagerDashboard() {
         activeEmployees: 2, // Obecnie w pracy
         pendingApprovals: 3, // Oczekujące zatwierdzenia
         schedulesCount: 3, // Ilość grafików
-        todayShifts: 5 // Dzisiejsze zmiany
+        todayShifts: 5, // Dzisiejsze zmiany
       }
 
       setStats(mockStats)
@@ -69,12 +69,12 @@ export default function ManagerDashboard() {
 
   if (loading) {
     return (
-      <main className="container mx-auto p-6 max-w-6xl">
+      <main className="container mx-auto max-w-6xl p-6">
         <div className="animate-pulse">
-          <div className="h-10 bg-gray-200 rounded w-64 mb-8"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[1,2,3,4].map(i => (
-              <div key={i} className="h-32 bg-gray-200 rounded"></div>
+          <div className="mb-8 h-10 w-64 rounded bg-gray-200"></div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-32 rounded bg-gray-200"></div>
             ))}
           </div>
         </div>
@@ -83,10 +83,10 @@ export default function ManagerDashboard() {
   }
 
   return (
-    <main className="container mx-auto p-6 max-w-6xl">
+    <main className="container mx-auto max-w-6xl p-6">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Witaj, {firstName}! 👋</h1>
+        <h1 className="mb-2 text-3xl font-bold">Witaj, {firstName}! 👋</h1>
         <div className="flex items-center gap-3">
           <span className="text-xl text-gray-600">{userData?.restaurantName}</span>
           <span className="text-sm text-gray-500">
@@ -96,58 +96,61 @@ export default function ManagerDashboard() {
       </div>
 
       {/* Statystyki */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="bg-gradient-to-br from-red-500 to-red-600 text-white rounded-lg shadow-lg p-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-red-100 text-sm">W pracy teraz</span>
-            <div className="w-3 h-3 bg-red-300 rounded-full animate-pulse"></div>
+      <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-lg bg-gradient-to-br from-red-500 to-red-600 p-6 text-white shadow-lg">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-sm text-red-100">W pracy teraz</span>
+            <div className="h-3 w-3 animate-pulse rounded-full bg-red-300"></div>
           </div>
           <div className="text-4xl font-bold">{stats.activeEmployees}</div>
-          <Link 
-            href="/manager/time" 
-            className="text-red-100 text-sm hover:text-white mt-2 inline-block"
+          <Link
+            href="/manager/time"
+            className="mt-2 inline-block text-sm text-red-100 hover:text-white"
           >
             Zobacz szczegóły →
           </Link>
         </div>
 
-        <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white rounded-lg shadow-lg p-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-yellow-100 text-sm">Do zatwierdzenia</span>
+        <div className="rounded-lg bg-gradient-to-br from-yellow-500 to-yellow-600 p-6 text-white shadow-lg">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-sm text-yellow-100">Do zatwierdzenia</span>
             <span className="text-2xl">⏳</span>
           </div>
           <div className="text-4xl font-bold">{stats.pendingApprovals}</div>
-          <Link 
-            href="/manager/time" 
-            className="text-yellow-100 text-sm hover:text-white mt-2 inline-block"
+          <Link
+            href="/manager/time"
+            className="mt-2 inline-block text-sm text-yellow-100 hover:text-white"
           >
             Zatwierdź wpisy →
           </Link>
         </div>
 
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg shadow-lg p-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-blue-100 text-sm">Grafiki</span>
+        <div className="rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 p-6 text-white shadow-lg">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-sm text-blue-100">Grafiki</span>
             <span className="text-2xl">📅</span>
           </div>
-          <div className="text-4xl font-bold">{stats.schedulesCount}<span className="text-xl text-blue-200">/5</span></div>
-          <Link 
-            href="/manager/schedules" 
-            className="text-blue-100 text-sm hover:text-white mt-2 inline-block"
+          <div className="text-4xl font-bold">
+            {stats.schedulesCount}
+            <span className="text-xl text-blue-200">/5</span>
+          </div>
+          <Link
+            href="/manager/schedules"
+            className="mt-2 inline-block text-sm text-blue-100 hover:text-white"
           >
             Zarządzaj →
           </Link>
         </div>
 
-        <div className="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg shadow-lg p-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-green-100 text-sm">Dzisiejsze zmiany</span>
+        <div className="rounded-lg bg-gradient-to-br from-green-500 to-green-600 p-6 text-white shadow-lg">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-sm text-green-100">Dzisiejsze zmiany</span>
             <span className="text-2xl">📋</span>
           </div>
           <div className="text-4xl font-bold">{stats.todayShifts}</div>
-          <Link 
-            href="/manager/schedules" 
-            className="text-green-100 text-sm hover:text-white mt-2 inline-block"
+          <Link
+            href="/manager/schedules"
+            className="mt-2 inline-block text-sm text-green-100 hover:text-white"
           >
             Zobacz grafik →
           </Link>
@@ -156,18 +159,18 @@ export default function ManagerDashboard() {
 
       {/* Szybkie akcje */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Szybkie akcje</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <h2 className="mb-4 text-xl font-semibold">Szybkie akcje</h2>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <Link
             href="/manager/time"
-            className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-6 border border-gray-200 group"
+            className="group rounded-lg border border-gray-200 bg-white p-6 shadow transition-shadow hover:shadow-md"
           >
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-yellow-100 text-2xl transition-transform group-hover:scale-110">
                 ⏱️
               </div>
               <div>
-                <h3 className="font-semibold text-lg">Zarządzaj czasem</h3>
+                <h3 className="text-lg font-semibold">Zarządzaj czasem</h3>
                 <p className="text-sm text-gray-600">Zatwierdź wpisy czasu pracy</p>
               </div>
             </div>
@@ -175,14 +178,14 @@ export default function ManagerDashboard() {
 
           <Link
             href="/manager/team"
-            className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-6 border border-gray-200 group"
+            className="group rounded-lg border border-gray-200 bg-white p-6 shadow transition-shadow hover:shadow-md"
           >
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 text-2xl transition-transform group-hover:scale-110">
                 👥
               </div>
               <div>
-                <h3 className="font-semibold text-lg">Zespół</h3>
+                <h3 className="text-lg font-semibold">Zespół</h3>
                 <p className="text-sm text-gray-600">Zarządzaj pracownikami</p>
               </div>
             </div>
@@ -190,14 +193,14 @@ export default function ManagerDashboard() {
 
           <Link
             href="/manager/schedules"
-            className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-6 border border-gray-200 group"
+            className="group rounded-lg border border-gray-200 bg-white p-6 shadow transition-shadow hover:shadow-md"
           >
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-green-100 text-2xl transition-transform group-hover:scale-110">
                 📅
               </div>
               <div>
-                <h3 className="font-semibold text-lg">Grafiki</h3>
+                <h3 className="text-lg font-semibold">Grafiki</h3>
                 <p className="text-sm text-gray-600">Twórz i edytuj grafiki</p>
               </div>
             </div>
@@ -205,14 +208,14 @@ export default function ManagerDashboard() {
 
           <Link
             href="/manager/reports"
-            className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-6 border border-gray-200 group"
+            className="group rounded-lg border border-gray-200 bg-white p-6 shadow transition-shadow hover:shadow-md"
           >
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-purple-100 text-2xl transition-transform group-hover:scale-110">
                 📊
               </div>
               <div>
-                <h3 className="font-semibold text-lg">Raporty</h3>
+                <h3 className="text-lg font-semibold">Raporty</h3>
                 <p className="text-sm text-gray-600">Eksportuj zestawienia</p>
               </div>
             </div>
@@ -220,14 +223,14 @@ export default function ManagerDashboard() {
 
           <Link
             href="/manager/team"
-            className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-6 border border-gray-200 group"
+            className="group rounded-lg border border-gray-200 bg-white p-6 shadow transition-shadow hover:shadow-md"
           >
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-pink-100 text-2xl transition-transform group-hover:scale-110">
                 ✉️
               </div>
               <div>
-                <h3 className="font-semibold text-lg">Zaproszenia</h3>
+                <h3 className="text-lg font-semibold">Zaproszenia</h3>
                 <p className="text-sm text-gray-600">Dodaj nowych pracowników</p>
               </div>
             </div>
@@ -235,14 +238,14 @@ export default function ManagerDashboard() {
 
           <Link
             href="/manager/settings"
-            className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-6 border border-gray-200 group"
+            className="group rounded-lg border border-gray-200 bg-white p-6 shadow transition-shadow hover:shadow-md"
           >
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-100 text-2xl transition-transform group-hover:scale-110">
                 ⚙️
               </div>
               <div>
-                <h3 className="font-semibold text-lg">Ustawienia</h3>
+                <h3 className="text-lg font-semibold">Ustawienia</h3>
                 <p className="text-sm text-gray-600">Konfiguracja restauracji</p>
               </div>
             </div>

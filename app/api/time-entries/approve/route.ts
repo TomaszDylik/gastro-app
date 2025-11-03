@@ -7,7 +7,7 @@ export async function POST(request: Request) {
 
     // TODO: Pobierz managera z sesji
     // const { data: { session } } = await supabase.auth.getSession()
-    
+
     const now = new Date().toISOString()
 
     if (approved) {
@@ -22,7 +22,7 @@ export async function POST(request: Request) {
       // })
 
       // TODO: Utwórz rekord w PayrollMonthly (miesięczne zestawienie)
-      
+
       return NextResponse.json({ success: true, message: 'Wpis zatwierdzony' })
     } else {
       // TODO: Odrzuć wpis

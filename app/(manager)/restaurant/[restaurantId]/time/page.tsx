@@ -25,7 +25,7 @@ export default function TimeManagementPage() {
 
   useEffect(() => {
     loadTimeEntries()
-    
+
     // Aktualizuj czas co sekundę dla live timera
     const interval = setInterval(() => {
       setCurrentTime(new Date())
@@ -48,7 +48,7 @@ export default function TimeManagementPage() {
           totalMinutes: null,
           status: 'active',
           date: format(new Date(), 'yyyy-MM-dd'),
-          roleTag: 'Kelner'
+          roleTag: 'Kelner',
         },
         {
           id: '2',
@@ -59,8 +59,8 @@ export default function TimeManagementPage() {
           totalMinutes: null,
           status: 'active',
           date: format(new Date(), 'yyyy-MM-dd'),
-          roleTag: 'Kuchnia'
-        }
+          roleTag: 'Kuchnia',
+        },
       ]
 
       const mockPending: TimeEntry[] = [
@@ -73,8 +73,8 @@ export default function TimeManagementPage() {
           totalMinutes: 450, // 7.5h
           status: 'pending',
           date: format(new Date(), 'yyyy-MM-dd'),
-          roleTag: 'Bar'
-        }
+          roleTag: 'Bar',
+        },
       ]
 
       setActiveEntries(mockActive)
@@ -90,16 +90,18 @@ export default function TimeManagementPage() {
   const handleApprove = async (entryId: string) => {
     try {
       // TODO: Zapisz do bazy z approvedByUserId i approvedAt
-      const entry = pendingEntries.find(e => e.id === entryId)
+      const entry = pendingEntries.find((e) => e.id === entryId)
       if (!entry) return
 
       console.log('Zatwierdzam wpis:', entryId)
-      
+
       // Przenieś do zatwierdzonych
-      setPendingEntries(prev => prev.filter(e => e.id !== entryId))
-      setApprovedEntries(prev => [...prev, { ...entry, status: 'approved' }])
-      
-      alert(`✅ Zatwierdzono ${entry.totalMinutes ? formatTime(entry.totalMinutes) : ''} dla ${entry.employeeName}`)
+      setPendingEntries((prev) => prev.filter((e) => e.id !== entryId))
+      setApprovedEntries((prev) => [...prev, { ...entry, status: 'approved' }])
+
+      alert(
+        `✅ Zatwierdzono ${entry.totalMinutes ? formatTime(entry.totalMinutes) : ''} dla ${entry.employeeName}`
+      )
     } catch (error) {
       console.error('Błąd zatwierdzania:', error)
       alert('❌ Nie udało się zatwierdzić wpisu')
@@ -109,12 +111,12 @@ export default function TimeManagementPage() {
   const handleReject = async (entryId: string, reason: string) => {
     try {
       // TODO: Zapisz odrzucenie z powodem
-      const entry = pendingEntries.find(e => e.id === entryId)
+      const entry = pendingEntries.find((e) => e.id === entryId)
       if (!entry) return
 
       console.log('Odrzucam wpis:', entryId, 'Powód:', reason)
-      
-      setPendingEntries(prev => prev.filter(e => e.id !== entryId))
+
+      setPendingEntries((prev) => prev.filter((e) => e.id !== entryId))
       alert(`❌ Odrzucono wpis dla ${entry.employeeName}`)
       loadTimeEntries() // Odśwież
     } catch (error) {
@@ -136,34 +138,37 @@ export default function TimeManagementPage() {
 
   if (loading) {
     return (
-      <main className="container mx-auto p-4 max-w-6xl">
+      <main className="container mx-auto max-w-6xl p-4">
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-64 mb-6"></div>
-          <div className="h-40 bg-gray-200 rounded"></div>
+          <div className="mb-6 h-8 w-64 rounded bg-gray-200"></div>
+          <div className="h-40 rounded bg-gray-200"></div>
         </div>
       </main>
     )
   }
 
   return (
-    <main className="container mx-auto p-4 max-w-6xl">
-      <h1 className="text-2xl font-bold mb-6">⏱️ Zarządzanie czasem pracy</h1>
+    <main className="container mx-auto max-w-6xl p-4">
+      <h1 className="mb-6 text-2xl font-bold">⏱️ Zarządzanie czasem pracy</h1>
 
       {/* Aktywni pracownicy (w pracy teraz) */}
       <section className="mb-8">
-        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-          <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+        <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold">
+          <div className="h-3 w-3 animate-pulse rounded-full bg-red-500"></div>
           Pracownicy w pracy ({activeEntries.length})
         </h2>
-        
+
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {activeEntries.map((entry) => (
-            <div key={entry.id} className="bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-300 rounded-lg p-4 shadow-md">
-              <div className="flex justify-between items-start mb-3">
+            <div
+              key={entry.id}
+              className="rounded-lg border-2 border-red-300 bg-gradient-to-br from-red-50 to-red-100 p-4 shadow-md"
+            >
+              <div className="mb-3 flex items-start justify-between">
                 <div>
-                  <h3 className="font-bold text-lg">{entry.employeeName}</h3>
+                  <h3 className="text-lg font-bold">{entry.employeeName}</h3>
                   {entry.roleTag && (
-                    <span className="text-xs bg-red-200 text-red-800 px-2 py-1 rounded-full">
+                    <span className="rounded-full bg-red-200 px-2 py-1 text-xs text-red-800">
                       {entry.roleTag}
                     </span>
                   )}
@@ -178,36 +183,37 @@ export default function TimeManagementPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-600">
-                <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                <span className="h-2 w-2 animate-pulse rounded-full bg-red-500"></span>
                 <span>Aktywnie pracuje</span>
               </div>
             </div>
           ))}
-          
+
           {activeEntries.length === 0 && (
-            <p className="text-gray-500 col-span-full text-center py-8">
-              Brak pracowników w pracy
-            </p>
+            <p className="col-span-full py-8 text-center text-gray-500">Brak pracowników w pracy</p>
           )}
         </div>
       </section>
 
       {/* Oczekujące na zatwierdzenie */}
       <section className="mb-8">
-        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-          <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+        <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold">
+          <div className="h-3 w-3 rounded-full bg-yellow-500"></div>
           Do zatwierdzenia ({pendingEntries.length})
         </h2>
-        
+
         <div className="space-y-3">
           {pendingEntries.map((entry) => (
-            <div key={entry.id} className="bg-yellow-50 border border-yellow-300 rounded-lg p-4 shadow">
-              <div className="flex justify-between items-center">
+            <div
+              key={entry.id}
+              className="rounded-lg border border-yellow-300 bg-yellow-50 p-4 shadow"
+            >
+              <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="font-bold text-lg">{entry.employeeName}</h3>
+                  <div className="mb-2 flex items-center gap-3">
+                    <h3 className="text-lg font-bold">{entry.employeeName}</h3>
                     {entry.roleTag && (
-                      <span className="text-xs bg-yellow-200 text-yellow-800 px-2 py-1 rounded-full">
+                      <span className="rounded-full bg-yellow-200 px-2 py-1 text-xs text-yellow-800">
                         {entry.roleTag}
                       </span>
                     )}
@@ -215,10 +221,14 @@ export default function TimeManagementPage() {
                   <div className="text-sm text-gray-600">
                     <span>{format(new Date(entry.clockIn), 'HH:mm', { locale: pl })}</span>
                     <span className="mx-2">→</span>
-                    <span>{entry.clockOut ? format(new Date(entry.clockOut), 'HH:mm', { locale: pl }) : '...'}</span>
+                    <span>
+                      {entry.clockOut
+                        ? format(new Date(entry.clockOut), 'HH:mm', { locale: pl })
+                        : '...'}
+                    </span>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-4">
                   <div className="text-right">
                     <div className="text-2xl font-bold text-yellow-600">
@@ -228,11 +238,11 @@ export default function TimeManagementPage() {
                       {format(new Date(entry.date), 'd MMM', { locale: pl })}
                     </div>
                   </div>
-                  
+
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleApprove(entry.id)}
-                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium"
+                      className="rounded-lg bg-green-600 px-4 py-2 font-medium text-white transition-colors hover:bg-green-700"
                     >
                       ✅ Zatwierdź
                     </button>
@@ -241,7 +251,7 @@ export default function TimeManagementPage() {
                         const reason = prompt('Powód odrzucenia (opcjonalnie):')
                         if (reason !== null) handleReject(entry.id, reason)
                       }}
-                      className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium"
+                      className="rounded-lg bg-red-600 px-4 py-2 font-medium text-white transition-colors hover:bg-red-700"
                     >
                       ❌ Odrzuć
                     </button>
@@ -250,9 +260,9 @@ export default function TimeManagementPage() {
               </div>
             </div>
           ))}
-          
+
           {pendingEntries.length === 0 && (
-            <p className="text-gray-500 text-center py-8">
+            <p className="py-8 text-center text-gray-500">
               Brak wpisów oczekujących na zatwierdzenie
             </p>
           )}
@@ -261,20 +271,26 @@ export default function TimeManagementPage() {
 
       {/* Zatwierdzone dzisiaj */}
       <section>
-        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-          <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+        <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold">
+          <div className="h-3 w-3 rounded-full bg-green-500"></div>
           Zatwierdzone dzisiaj ({approvedEntries.length})
         </h2>
-        
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+
+        <div className="overflow-hidden rounded-lg bg-white shadow">
           {approvedEntries.length > 0 ? (
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Pracownik</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">
+                    Pracownik
+                  </th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Rola</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Godziny</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Czas pracy</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">
+                    Godziny
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">
+                    Czas pracy
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -282,12 +298,13 @@ export default function TimeManagementPage() {
                   <tr key={entry.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 font-medium">{entry.employeeName}</td>
                     <td className="px-4 py-3">
-                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                      <span className="rounded-full bg-green-100 px-2 py-1 text-xs text-green-800">
                         {entry.roleTag || '-'}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600">
-                      {format(new Date(entry.clockIn), 'HH:mm')} - {entry.clockOut ? format(new Date(entry.clockOut), 'HH:mm') : '...'}
+                      {format(new Date(entry.clockIn), 'HH:mm')} -{' '}
+                      {entry.clockOut ? format(new Date(entry.clockOut), 'HH:mm') : '...'}
                     </td>
                     <td className="px-4 py-3 font-bold text-green-600">
                       {entry.totalMinutes ? formatTime(entry.totalMinutes) : '-'}
@@ -297,9 +314,7 @@ export default function TimeManagementPage() {
               </tbody>
             </table>
           ) : (
-            <p className="text-gray-500 text-center py-8">
-              Brak zatwierdzonych wpisów dzisiaj
-            </p>
+            <p className="py-8 text-center text-gray-500">Brak zatwierdzonych wpisów dzisiaj</p>
           )}
         </div>
       </section>

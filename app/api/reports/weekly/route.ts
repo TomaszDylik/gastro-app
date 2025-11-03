@@ -5,10 +5,10 @@ const prisma = new PrismaClient()
 
 /**
  * POST /api/reports/weekly
- * 
+ *
  * Generate weekly report for a restaurant
  * Week runs Monday-Sunday
- * 
+ *
  * Body:
  * - restaurantId: string
  * - weekStart: string (YYYY-MM-DD, must be Monday)
@@ -28,12 +28,10 @@ export async function POST(request: NextRequest) {
     // Validate weekStart is Monday
     const weekStartDate = new Date(weekStart)
     weekStartDate.setHours(0, 0, 0, 0)
-    
-    if (weekStartDate.getDay() !== 1) { // 1 = Monday
-      return NextResponse.json(
-        { error: 'weekStart must be a Monday' },
-        { status: 400 }
-      )
+
+    if (weekStartDate.getDay() !== 1) {
+      // 1 = Monday
+      return NextResponse.json({ error: 'weekStart must be a Monday' }, { status: 400 })
     }
 
     // Check if report already exists
@@ -41,9 +39,9 @@ export async function POST(request: NextRequest) {
       where: {
         restaurantId_weekStart: {
           restaurantId,
-          weekStart: weekStartDate
-        }
-      }
+          weekStart: weekStartDate,
+        },
+      },
     })
 
     if (existingReport) {
@@ -64,45 +62,48 @@ export async function POST(request: NextRequest) {
         restaurantId,
         date: {
           gte: weekStartDate,
-          lte: weekEnd
-        }
+          lte: weekEnd,
+        },
       },
       orderBy: {
-        date: 'asc'
-      }
+        date: 'asc',
+      },
     })
 
     // Get all TimeEntries for this week (for detailed calculations)
     const timeEntries = await prisma.timeEntry.findMany({
       where: {
         schedule: {
-          restaurantId
+          restaurantId,
         },
         clockIn: {
           gte: weekStartDate,
-          lte: weekEnd
+          lte: weekEnd,
         },
         clockOut: {
-          not: null
-        }
+          not: null,
+        },
       },
       include: {
         membership: {
           include: {
-            user: true
-          }
-        }
-      }
+            user: true,
+          },
+        },
+      },
     })
 
     // Aggregate by employee
-    const employeeTotals = new Map<string, {
-      userId: string
-      userName: string
-      totalHours: number
-      totalAmount: number
-      days: number
-    }>()
+    const employeeTotals = new Map<
+      string,
+      {
+        userId: string
+        userName: string
+        totalHours: number
+        totalAmount: number
+        days: number
+      }
+    >()
 
     for (const entry of timeEntries) {
       if (!entry.clockOut) continue
@@ -113,10 +114,12 @@ export async function POST(request: NextRequest) {
       // Calculate hours
       const durationMs = entry.clockOut.getTime() - entry.clockIn.getTime()
       const hours = durationMs / (1000 * 60 * 60)
-      const adjustedHours = hours + (entry.adjustmentMinutes / 60)
+      const adjustedHours = hours + entry.adjustmentMinutes / 60
 
       // Get effective hourly rate
-      const hourlyRate = Number(entry.membership.hourlyRateManagerPLN || entry.membership.user.hourlyRateDefaultPLN || 0)
+      const hourlyRate = Number(
+        entry.membership.hourlyRateManagerPLN || entry.membership.user.hourlyRateDefaultPLN || 0
+      )
       const amount = adjustedHours * hourlyRate
 
       if (!employeeTotals.has(userId)) {
@@ -125,7 +128,7 @@ export async function POST(request: NextRequest) {
           userName,
           totalHours: 0,
           totalAmount: 0,
-          days: 0
+          days: 0,
         })
       }
 
@@ -136,12 +139,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Convert to array and round
-    const employeeData = Array.from(employeeTotals.values()).map(emp => ({
+    const employeeData = Array.from(employeeTotals.values()).map((emp) => ({
       userId: emp.userId,
       userName: emp.userName,
       totalHours: Math.round(emp.totalHours * 100) / 100,
       totalAmount: Math.round(emp.totalAmount * 100) / 100,
-      days: emp.days
+      days: emp.days,
     }))
 
     // Calculate grand totals
@@ -154,7 +157,7 @@ export async function POST(request: NextRequest) {
       employees: employeeData,
       grandTotalHours: Math.round(grandTotalHours * 100) / 100,
       grandTotalAmount: Math.round(grandTotalAmount * 100) / 100,
-      dailyReportsCount: dailyReports.length
+      dailyReportsCount: dailyReports.length,
     }
 
     // Create weekly report
@@ -162,27 +165,26 @@ export async function POST(request: NextRequest) {
       data: {
         restaurantId,
         weekStart: weekStartDate,
-        totalsJson
-      }
+        totalsJson,
+      },
     })
 
-    return NextResponse.json({
-      success: true,
-      report: weeklyReport
-    }, { status: 201 })
-
+    return NextResponse.json(
+      {
+        success: true,
+        report: weeklyReport,
+      },
+      { status: 201 }
+    )
   } catch (error) {
     console.error('❌ Weekly report generation error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 /**
  * GET /api/reports/weekly?restaurantId=xxx&weekStart=YYYY-MM-DD
- * 
+ *
  * Get weekly report for a specific week
  */
 export async function GET(request: NextRequest) {
@@ -192,10 +194,7 @@ export async function GET(request: NextRequest) {
     const weekStart = searchParams.get('weekStart')
 
     if (!restaurantId) {
-      return NextResponse.json(
-        { error: 'restaurantId is required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'restaurantId is required' }, { status: 400 })
     }
 
     // If weekStart provided, get specific week
@@ -207,16 +206,13 @@ export async function GET(request: NextRequest) {
         where: {
           restaurantId_weekStart: {
             restaurantId,
-            weekStart: weekStartDate
-          }
-        }
+            weekStart: weekStartDate,
+          },
+        },
       })
 
       if (!report) {
-        return NextResponse.json(
-          { error: 'Weekly report not found' },
-          { status: 404 }
-        )
+        return NextResponse.json({ error: 'Weekly report not found' }, { status: 404 })
       }
 
       return NextResponse.json({ report })
@@ -226,16 +222,12 @@ export async function GET(request: NextRequest) {
     const reports = await prisma.reportWeekly.findMany({
       where: { restaurantId },
       orderBy: { weekStart: 'desc' },
-      take: 20 // Last 20 weeks
+      take: 20, // Last 20 weeks
     })
 
     return NextResponse.json({ reports })
-
   } catch (error) {
     console.error('❌ Get weekly report error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

@@ -9,35 +9,28 @@ export const dynamic = 'force-dynamic'
 
 /**
  * GET /api/restaurants/[id]
- * 
+ *
  * Get single restaurant details (only if user has membership)
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     // 1. Authenticate
     const supabase = createRouteHandlerClient({ cookies })
-    const { data: { session } } = await supabase.auth.getSession()
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
 
     if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     //2. Get user
     const user = await prisma.appUser.findUnique({
-      where: { authUserId: session.user.id }
+      where: { authUserId: session.user.id },
     })
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     // 3. Check membership
@@ -45,8 +38,8 @@ export async function GET(
       where: {
         userId: user.id,
         restaurantId: params.id,
-        status: 'active'
-      }
+        status: 'active',
+      },
     })
 
     if (!membership) {
@@ -60,15 +53,12 @@ export async function GET(
     const restaurant = await prisma.restaurant.findUnique({
       where: { id: params.id },
       include: {
-        settings: true
-      }
+        settings: true,
+      },
     })
 
     if (!restaurant) {
-      return NextResponse.json(
-        { error: 'Restaurant not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
     }
 
     return NextResponse.json({
@@ -77,16 +67,12 @@ export async function GET(
         name: restaurant.name,
         timezone: restaurant.timezone,
         settings: restaurant.settings,
-        userRole: membership.role
-      }
+        userRole: membership.role,
+      },
     })
-
   } catch (error) {
     console.error('Error fetching restaurant:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   } finally {
     await prisma.$disconnect()
   }
@@ -94,37 +80,30 @@ export async function GET(
 
 /**
  * PATCH /api/restaurants/[id]
- * 
+ *
  * Update restaurant (owner/manager only)
- * 
+ *
  * Body: { name?, timezone?, companyId? }
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     // 1. Authenticate
     const supabase = createRouteHandlerClient({ cookies })
-    const { data: { session } } = await supabase.auth.getSession()
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
 
     if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // 2. Get user
     const user = await prisma.appUser.findUnique({
-      where: { authUserId: session.user.id }
+      where: { authUserId: session.user.id },
     })
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     // 3. Check if user is owner or manager
@@ -134,9 +113,9 @@ export async function PATCH(
         restaurantId: params.id,
         status: 'active',
         role: {
-          in: ['owner', 'manager', 'super_admin']
-        }
-      }
+          in: ['owner', 'manager', 'super_admin'],
+        },
+      },
     })
 
     if (!membership) {
@@ -156,11 +135,11 @@ export async function PATCH(
       data: {
         ...(name !== undefined && { name }),
         ...(timezone !== undefined && { timezone }),
-        ...(companyId !== undefined && { companyId: companyId || null })
+        ...(companyId !== undefined && { companyId: companyId || null }),
       },
       include: {
-        settings: true
-      }
+        settings: true,
+      },
     })
 
     return NextResponse.json({
@@ -168,16 +147,12 @@ export async function PATCH(
         id: updatedRestaurant.id,
         name: updatedRestaurant.name,
         timezone: updatedRestaurant.timezone,
-        settings: updatedRestaurant.settings
-      }
+        settings: updatedRestaurant.settings,
+      },
     })
-
   } catch (error) {
     console.error('Error updating restaurant:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   } finally {
     await prisma.$disconnect()
   }
@@ -185,35 +160,28 @@ export async function PATCH(
 
 /**
  * DELETE /api/restaurants/[id]
- * 
+ *
  * Delete restaurant (owner/super_admin only)
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     // 1. Authenticate
     const supabase = createRouteHandlerClient({ cookies })
-    const { data: { session } } = await supabase.auth.getSession()
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
 
     if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // 2. Get user
     const user = await prisma.appUser.findUnique({
-      where: { authUserId: session.user.id }
+      where: { authUserId: session.user.id },
     })
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     // 3. Check if user is owner or super_admin
@@ -223,9 +191,9 @@ export async function DELETE(
         restaurantId: params.id,
         status: 'active',
         role: {
-          in: ['owner', 'super_admin']
-        }
-      }
+          in: ['owner', 'super_admin'],
+        },
+      },
     })
 
     if (!membership) {
@@ -237,19 +205,15 @@ export async function DELETE(
 
     // 4. Delete restaurant (will cascade delete related records)
     await prisma.restaurant.delete({
-      where: { id: params.id }
+      where: { id: params.id },
     })
 
     return NextResponse.json({
-      message: 'Restaurant deleted successfully'
+      message: 'Restaurant deleted successfully',
     })
-
   } catch (error) {
     console.error('Error deleting restaurant:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   } finally {
     await prisma.$disconnect()
   }

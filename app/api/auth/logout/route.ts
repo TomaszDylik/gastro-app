@@ -6,14 +6,11 @@ export async function POST() {
   try {
     const cookieStore = cookies()
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
-    
+
     await supabase.auth.signOut()
-    
+
     return NextResponse.json({ success: true })
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Błąd wylogowania' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Błąd wylogowania' }, { status: 500 })
   }
 }

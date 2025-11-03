@@ -1,6 +1,6 @@
 /**
  * Comprehensive API Tests - Full Coverage
- * 
+ *
  * Tests all API endpoints with:
  * - Authorization (401/403)
  * - Input validation (400)
@@ -29,7 +29,7 @@ async function makeRequest(
   return {
     ok: true,
     status: 200,
-    json: async () => ({})
+    json: async () => ({}),
   }
 }
 
@@ -39,13 +39,13 @@ async function main() {
   try {
     // Setup: Get test users
     const manager = await prisma.appUser.findFirst({
-      where: { email: 'manager@gmail.pl' }
+      where: { email: 'manager@gmail.pl' },
     })
     const employee1 = await prisma.appUser.findFirst({
-      where: { email: 'employee1@gmail.pl' }
+      where: { email: 'employee1@gmail.pl' },
     })
     const employee2 = await prisma.appUser.findFirst({
-      where: { email: 'employee2@gmail.pl' }
+      where: { email: 'employee2@gmail.pl' },
     })
 
     if (!manager || !employee1 || !employee2) {
@@ -53,7 +53,7 @@ async function main() {
     }
 
     const restaurant = await prisma.restaurant.findFirst({
-      where: { name: 'Pod Gruszą' }
+      where: { name: 'Pod Gruszą' },
     })
     if (!restaurant) throw new Error('Test restaurant not found')
 
@@ -77,10 +77,10 @@ async function main() {
         include: {
           memberships: {
             include: {
-              restaurant: true
-            }
-          }
-        }
+              restaurant: true,
+            },
+          },
+        },
       })
 
       if (user && user.email === manager.email) {
@@ -100,7 +100,7 @@ async function main() {
     try {
       const updatedUser = await prisma.appUser.update({
         where: { id: employee1.id },
-        data: { hourlyRateDefaultPLN: '38.00' }
+        data: { hourlyRateDefaultPLN: '38.00' },
       })
 
       if (Number(updatedUser.hourlyRateDefaultPLN) === 38) {
@@ -114,7 +114,7 @@ async function main() {
       // Revert change
       await prisma.appUser.update({
         where: { id: employee1.id },
-        data: { hourlyRateDefaultPLN: '35.00' }
+        data: { hourlyRateDefaultPLN: '35.00' },
       })
     } catch (error: any) {
       console.log(`    ❌ Failed: ${error.message}`)
@@ -143,7 +143,7 @@ async function main() {
     console.log('  Test 2.1: GET /api/restaurants - List accessible restaurants')
     try {
       const managerMembership = await prisma.membership.findFirst({
-        where: { userId: manager.id }
+        where: { userId: manager.id },
       })
 
       const restaurants = await prisma.restaurant.findMany({
@@ -151,10 +151,10 @@ async function main() {
           memberships: {
             some: {
               userId: manager.id,
-              status: 'active'
-            }
-          }
-        }
+              status: 'active',
+            },
+          },
+        },
       })
 
       if (restaurants.length > 0) {
@@ -178,10 +178,10 @@ async function main() {
           settings: true,
           memberships: {
             include: {
-              user: true
-            }
-          }
-        }
+              user: true,
+            },
+          },
+        },
       })
 
       if (restaurantDetails && restaurantDetails.name === restaurant.name) {
@@ -201,7 +201,7 @@ async function main() {
     console.log('\n  Test 2.3: GET /api/restaurants/[id] - Non-existent ID (should return 404)')
     try {
       const nonExistent = await prisma.restaurant.findUnique({
-        where: { id: 'non-existent-id-12345' }
+        where: { id: 'non-existent-id-12345' },
       })
 
       if (nonExistent === null) {
@@ -221,7 +221,7 @@ async function main() {
       const originalName = restaurant.name
       const updated = await prisma.restaurant.update({
         where: { id: restaurant.id },
-        data: { name: 'Pod Gruszą - Updated' }
+        data: { name: 'Pod Gruszą - Updated' },
       })
 
       if (updated.name === 'Pod Gruszą - Updated') {
@@ -231,7 +231,7 @@ async function main() {
         // Revert change
         await prisma.restaurant.update({
           where: { id: restaurant.id },
-          data: { name: originalName }
+          data: { name: originalName },
         })
       } else {
         throw new Error('Update failed')
@@ -248,8 +248,8 @@ async function main() {
     await prisma.reportDaily.deleteMany({
       where: {
         restaurantId: restaurant.id,
-        date: new Date('2025-01-25')
-      }
+        date: new Date('2025-01-25'),
+      },
     })
 
     // Test 3.1: Generate daily report (success case)
@@ -257,11 +257,11 @@ async function main() {
     try {
       // Create test time entries first
       const schedule = await prisma.schedule.findFirst({
-        where: { restaurantId: restaurant.id }
+        where: { restaurantId: restaurant.id },
       })
 
       const membership = await prisma.membership.findFirst({
-        where: { userId: employee1.id, restaurantId: restaurant.id }
+        where: { userId: employee1.id, restaurantId: restaurant.id },
       })
 
       if (schedule && membership) {
@@ -272,8 +272,8 @@ async function main() {
             scheduleId: schedule.id,
             clockIn: testDate,
             clockOut: new Date('2025-01-25T17:00:00Z'),
-            adjustmentMinutes: 0
-          }
+            adjustmentMinutes: 0,
+          },
         })
 
         // Generate report
@@ -282,17 +282,19 @@ async function main() {
             restaurantId: restaurant.id,
             date: new Date('2025-01-25'),
             totalsJson: {
-              employees: [{
-                userId: employee1.id,
-                userName: employee1.name,
-                totalHours: 8,
-                hourlyRate: 35,
-                totalAmount: 280
-              }],
-              summary: { totalHours: 8, totalAmount: 280, totalEntries: 1 }
+              employees: [
+                {
+                  userId: employee1.id,
+                  userName: employee1.name,
+                  totalHours: 8,
+                  hourlyRate: 35,
+                  totalAmount: 280,
+                },
+              ],
+              summary: { totalHours: 8, totalAmount: 280, totalEntries: 1 },
             } as any,
-            signatureLogJson: [] as any
-          }
+            signatureLogJson: [] as any,
+          },
         })
 
         if (report && report.restaurantId === restaurant.id) {
@@ -314,8 +316,8 @@ async function main() {
       const existingReport = await prisma.reportDaily.findFirst({
         where: {
           restaurantId: restaurant.id,
-          date: new Date('2025-01-25')
-        }
+          date: new Date('2025-01-25'),
+        },
       })
 
       if (existingReport) {
@@ -333,8 +335,8 @@ async function main() {
       const report = await prisma.reportDaily.findFirst({
         where: {
           restaurantId: restaurant.id,
-          date: new Date('2025-01-25')
-        }
+          date: new Date('2025-01-25'),
+        },
       })
 
       if (report) {
@@ -342,11 +344,11 @@ async function main() {
           action: 'signed',
           byUserId: manager.id,
           byUserName: manager.name,
-          at: new Date().toISOString()
+          at: new Date().toISOString(),
         }
 
         const currentLog = Array.isArray(report.signatureLogJson)
-          ? report.signatureLogJson as any[]
+          ? (report.signatureLogJson as any[])
           : []
 
         const signed = await prisma.reportDaily.update({
@@ -354,8 +356,8 @@ async function main() {
           data: {
             signedByUserId: manager.id,
             signedAt: new Date(),
-            signatureLogJson: [...currentLog, signatureEntry] as any
-          }
+            signatureLogJson: [...currentLog, signatureEntry] as any,
+          },
         })
 
         if (signed.signedByUserId === manager.id) {
@@ -376,8 +378,8 @@ async function main() {
       const report = await prisma.reportDaily.findFirst({
         where: {
           restaurantId: restaurant.id,
-          date: new Date('2025-01-25')
-        }
+          date: new Date('2025-01-25'),
+        },
       })
 
       if (report && report.signedByUserId) {
@@ -396,16 +398,16 @@ async function main() {
     console.log('  Test 4.1: POST /api/shifts/validate - Valid shift (no overlap)')
     try {
       const membership = await prisma.membership.findFirst({
-        where: { userId: employee2.id, restaurantId: restaurant.id }
+        where: { userId: employee2.id, restaurantId: restaurant.id },
       })
 
       if (membership) {
         const { checkShiftOverlap } = await import('../lib/shift-overlap-validation')
-        
+
         const result = await checkShiftOverlap({
           membershipId: membership.id,
           newShiftStart: new Date('2025-01-26T09:00:00Z'),
-          newShiftEnd: new Date('2025-01-26T17:00:00Z')
+          newShiftEnd: new Date('2025-01-26T17:00:00Z'),
         })
 
         if (!result.hasOverlap) {
@@ -424,12 +426,9 @@ async function main() {
     console.log('\n  Test 4.2: POST /api/shifts/validate - Invalid times (should fail)')
     try {
       const { validateShiftTimes } = await import('../lib/shift-overlap-validation')
-      
+
       try {
-        validateShiftTimes(
-          new Date('2025-01-26T17:00:00Z'),
-          new Date('2025-01-26T09:00:00Z')
-        )
+        validateShiftTimes(new Date('2025-01-26T17:00:00Z'), new Date('2025-01-26T09:00:00Z'))
         throw new Error('Should have thrown validation error')
       } catch (validationError: any) {
         if (validationError.message.includes('start must be before end')) {
@@ -448,7 +447,7 @@ async function main() {
     console.log('\n  Test 4.3: POST /api/shifts/validate - Exceeds 24h (should fail)')
     try {
       const { validateShiftTimes } = await import('../lib/shift-overlap-validation')
-      
+
       try {
         validateShiftTimes(
           new Date('2025-01-26T09:00:00Z'),
@@ -479,8 +478,8 @@ async function main() {
           data: {
             authUserId: manager.authUserId, // Duplicate!
             name: 'Duplicate User',
-            email: 'duplicate@test.pl'
-          }
+            email: 'duplicate@test.pl',
+          },
         })
         throw new Error('Should have failed on unique constraint')
       } catch (dbError: any) {
@@ -505,8 +504,8 @@ async function main() {
             userId: employee1.id,
             restaurantId: 'invalid-restaurant-id-xyz',
             role: 'employee',
-            status: 'active'
-          }
+            status: 'active',
+          },
         })
         throw new Error('Should have failed on foreign key')
       } catch (dbError: any) {
@@ -530,8 +529,8 @@ async function main() {
         data: {
           name: 'Test Restaurant for Deletion',
           timezone: 'Europe/Warsaw',
-          settings: { create: {} }
-        }
+          settings: { create: {} },
+        },
       })
 
       // Create membership
@@ -540,30 +539,30 @@ async function main() {
           userId: employee1.id,
           restaurantId: testRestaurant.id,
           role: 'employee',
-          status: 'active'
-        }
+          status: 'active',
+        },
       })
 
       const membershipId = testMembership.id
 
       // Delete memberships first
       await prisma.membership.delete({
-        where: { id: membershipId }
+        where: { id: membershipId },
       })
 
       // Delete restaurant settings
       await prisma.restaurantSettings.deleteMany({
-        where: { restaurantId: testRestaurant.id }
+        where: { restaurantId: testRestaurant.id },
       })
 
       // Delete restaurant
       await prisma.restaurant.delete({
-        where: { id: testRestaurant.id }
+        where: { id: testRestaurant.id },
       })
 
       // Check if restaurant was deleted
       const restaurantExists = await prisma.restaurant.findUnique({
-        where: { id: testRestaurant.id }
+        where: { id: testRestaurant.id },
       })
 
       if (restaurantExists === null) {
@@ -583,13 +582,14 @@ async function main() {
     console.log('='.repeat(60))
     console.log(`✅ Tests Passed: ${testsPassedCount}`)
     console.log(`❌ Tests Failed: ${testsFailedCount}`)
-    console.log(`📈 Success Rate: ${Math.round((testsPassedCount / (testsPassedCount + testsFailedCount)) * 100)}%`)
+    console.log(
+      `📈 Success Rate: ${Math.round((testsPassedCount / (testsPassedCount + testsFailedCount)) * 100)}%`
+    )
     console.log('='.repeat(60))
 
     if (testsFailedCount > 0) {
       process.exit(1)
     }
-
   } catch (error) {
     console.error('\n❌ Test suite failed:', error)
     process.exit(1)

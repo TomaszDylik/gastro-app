@@ -4,12 +4,12 @@ const prisma = new PrismaClient()
 
 /**
  * Check if a TimeEntry can be edited based on ReportDaily signature status.
- * 
+ *
  * Rules:
  * - Worker can edit their own TimeEntry ONLY if ReportDaily for that date is NOT signed
  * - Manager can edit any TimeEntry ONLY if ReportDaily for that date is NOT signed
  * - After ReportDaily is signed: NO edits allowed (immutable)
- * 
+ *
  * @param timeEntryId - ID of the TimeEntry to check
  * @param userId - ID of the user attempting to edit
  * @param userRole - Role of the user ('employee', 'manager', 'owner')
@@ -27,11 +27,11 @@ export async function canEditTimeEntry(
       membership: {
         include: {
           user: true,
-          restaurant: true
-        }
+          restaurant: true,
+        },
       },
-      schedule: true
-    }
+      schedule: true,
+    },
   })
 
   if (!timeEntry) {
@@ -47,25 +47,25 @@ export async function canEditTimeEntry(
     where: {
       restaurantId_date: {
         restaurantId: timeEntry.membership.restaurantId,
-        date: entryDate
-      }
-    }
+        date: entryDate,
+      },
+    },
   })
 
   // If report is signed, no edits allowed
   if (reportDaily && reportDaily.signedAt) {
-    return { 
-      canEdit: false, 
-      reason: 'ReportDaily is already signed for this date. No edits allowed.' 
+    return {
+      canEdit: false,
+      reason: 'ReportDaily is already signed for this date. No edits allowed.',
     }
   }
 
   // Check ownership for employees
   if (userRole === 'employee') {
     if (timeEntry.membership.userId !== userId) {
-      return { 
-        canEdit: false, 
-        reason: 'You can only edit your own time entries.' 
+      return {
+        canEdit: false,
+        reason: 'You can only edit your own time entries.',
       }
     }
   }
@@ -78,7 +78,7 @@ export async function canEditTimeEntry(
 /**
  * Manager can close a TimeEntry that has clockIn but no clockOut (hanging shift).
  * Sets clockOut to shift.end or current time if no shift assigned.
- * 
+ *
  * @param timeEntryId - ID of the TimeEntry to close
  * @param closedByUserId - ID of the manager closing the entry
  * @param closeTime - Optional time to set as clockOut (defaults to now)
@@ -96,12 +96,12 @@ export async function closeHangingTimeEntry(
         include: {
           shiftAssignments: {
             include: {
-              shift: true
-            }
-          }
-        }
-      }
-    }
+              shift: true,
+            },
+          },
+        },
+      },
+    },
   })
 
   if (!timeEntry) {
@@ -120,7 +120,7 @@ export async function closeHangingTimeEntry(
 
   if (!closeTime && timeEntry.membership.shiftAssignments.length > 0) {
     // Find shift that covers the clockIn time
-    const matchingShift = timeEntry.membership.shiftAssignments.find(sa => {
+    const matchingShift = timeEntry.membership.shiftAssignments.find((sa) => {
       const shift = sa.shift
       return shift.start <= timeEntry.clockIn && shift.end > timeEntry.clockIn
     })
@@ -141,10 +141,8 @@ export async function closeHangingTimeEntry(
     data: {
       clockOut: clockOutTime,
       adjustmentMinutes: timeEntry.adjustmentMinutes, // Keep existing or set to 0
-      reason: timeEntry.reason 
-        ? `${timeEntry.reason} (Closed by manager)`
-        : 'Closed by manager'
-    }
+      reason: timeEntry.reason ? `${timeEntry.reason} (Closed by manager)` : 'Closed by manager',
+    },
   })
 
   return updatedEntry

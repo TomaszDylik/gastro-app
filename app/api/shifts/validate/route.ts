@@ -10,10 +10,10 @@ export const dynamic = 'force-dynamic'
 
 /**
  * POST /api/shifts/validate
- * 
+ *
  * Validate that a shift doesn't overlap with existing shifts for the same employee.
  * Checks across ALL schedules/categories for the member.
- * 
+ *
  * Request body:
  * {
  *   shiftId?: string,          // Optional - when editing existing shift
@@ -21,7 +21,7 @@ export const dynamic = 'force-dynamic'
  *   start: string,             // ISO 8601 date string
  *   end: string,               // ISO 8601 date string
  * }
- * 
+ *
  * Response:
  * {
  *   valid: boolean,
@@ -39,13 +39,12 @@ export async function POST(request: NextRequest) {
   try {
     // 1. Authenticate user
     const supabase = createRouteHandlerClient({ cookies })
-    const { data: { session } } = await supabase.auth.getSession()
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
 
     if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // 2. Parse request body
@@ -64,19 +63,13 @@ export async function POST(request: NextRequest) {
     const endDate = new Date(end)
 
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-      return NextResponse.json(
-        { error: 'Invalid date format' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Invalid date format' }, { status: 400 })
     }
 
     try {
       validateShiftTimes(startDate, endDate)
     } catch (error: any) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
     // 4. Check for overlapping shifts across ALL schedules
@@ -84,34 +77,33 @@ export async function POST(request: NextRequest) {
       membershipId,
       newShiftStart: startDate,
       newShiftEnd: endDate,
-      excludeShiftId: shiftId
+      excludeShiftId: shiftId,
     })
 
     // 5. Return validation result
     if (result.hasOverlap) {
-      return NextResponse.json({
-        valid: false,
-        error: 'SHIFT_OVERLAP_FOR_MEMBER',
-        conflictingShift: {
-          id: result.conflictingShift!.id,
-          scheduleId: result.conflictingShift!.scheduleId,
-          scheduleName: result.conflictingShift!.scheduleName,
-          start: result.conflictingShift!.start.toISOString(),
-          end: result.conflictingShift!.end.toISOString()
-        }
-      }, { status: 409 })
+      return NextResponse.json(
+        {
+          valid: false,
+          error: 'SHIFT_OVERLAP_FOR_MEMBER',
+          conflictingShift: {
+            id: result.conflictingShift!.id,
+            scheduleId: result.conflictingShift!.scheduleId,
+            scheduleName: result.conflictingShift!.scheduleName,
+            start: result.conflictingShift!.start.toISOString(),
+            end: result.conflictingShift!.end.toISOString(),
+          },
+        },
+        { status: 409 }
+      )
     }
 
     return NextResponse.json({
-      valid: true
+      valid: true,
     })
-
   } catch (error) {
     console.error('Error validating shift:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   } finally {
     await prisma.$disconnect()
   }

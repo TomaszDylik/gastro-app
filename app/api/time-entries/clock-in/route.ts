@@ -5,10 +5,10 @@ const prisma = new PrismaClient()
 
 /**
  * POST /api/time-entries/clock-in
- * 
+ *
  * Clock in for a shift assignment or manually.
  * Creates a new TimeEntry with clockIn timestamp.
- * 
+ *
  * Body:
  * - membershipId: string (required)
  * - scheduleId: string (required)
@@ -33,34 +33,25 @@ export async function POST(request: NextRequest) {
       where: { id: membershipId },
       include: {
         restaurant: true,
-        user: true
-      }
+        user: true,
+      },
     })
 
     if (!membership) {
-      return NextResponse.json(
-        { error: 'Membership not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Membership not found' }, { status: 404 })
     }
 
     if (membership.status !== 'active') {
-      return NextResponse.json(
-        { error: 'Membership is not active' },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: 'Membership is not active' }, { status: 403 })
     }
 
     // Check if schedule exists and belongs to the same restaurant
     const schedule = await prisma.schedule.findUnique({
-      where: { id: scheduleId }
+      where: { id: scheduleId },
     })
 
     if (!schedule) {
-      return NextResponse.json(
-        { error: 'Schedule not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Schedule not found' }, { status: 404 })
     }
 
     if (schedule.restaurantId !== membership.restaurantId) {
@@ -75,16 +66,16 @@ export async function POST(request: NextRequest) {
       where: {
         membershipId,
         scheduleId,
-        clockOut: null
-      }
+        clockOut: null,
+      },
     })
 
     if (openTimeEntry) {
       return NextResponse.json(
-        { 
+        {
           error: 'ALREADY_CLOCKED_IN',
           message: 'You already have an open time entry. Clock out first.',
-          openTimeEntry
+          openTimeEntry,
         },
         { status: 409 }
       )
@@ -100,28 +91,27 @@ export async function POST(request: NextRequest) {
         clockIn: clockInTime,
         source: 'manual',
         status: 'active',
-        reason: reason || null
+        reason: reason || null,
       },
       include: {
         membership: {
           include: {
-            user: true
-          }
+            user: true,
+          },
         },
-        schedule: true
-      }
+        schedule: true,
+      },
     })
 
-    return NextResponse.json({ 
-      success: true,
-      timeEntry 
-    }, { status: 201 })
-
+    return NextResponse.json(
+      {
+        success: true,
+        timeEntry,
+      },
+      { status: 201 }
+    )
   } catch (error) {
     console.error('❌ Clock-in error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

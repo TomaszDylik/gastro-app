@@ -28,12 +28,12 @@ export default function EmployeeLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+      <header className="sticky top-0 z-10 bg-white shadow-sm">
+        <div className="container mx-auto flex items-center justify-between px-4 py-3">
           <h1 className="text-xl font-bold text-blue-600">Gastro Schedules</h1>
           <button
             onClick={handleLogout}
-            className="text-sm text-gray-600 hover:text-red-600 transition-colors"
+            className="text-sm text-gray-600 transition-colors hover:text-red-600"
           >
             🚪 Wyloguj
           </button>
@@ -41,12 +41,10 @@ export default function EmployeeLayout({ children }: { children: ReactNode }) {
       </header>
 
       {/* Main Content */}
-      <div className="container mx-auto">
-        {children}
-      </div>
+      <div className="container mx-auto">{children}</div>
 
       {/* Bottom Navigation - Mobile PWA */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg">
+      <nav className="fixed bottom-0 left-0 right-0 border-t border-gray-200 bg-white shadow-lg">
         <div className="grid grid-cols-5 gap-1">
           {navigation.map((item) => {
             const isActive = pathname === item.href
@@ -54,16 +52,14 @@ export default function EmployeeLayout({ children }: { children: ReactNode }) {
               <Link
                 key={item.name}
                 href={item.href}
-                className={`flex flex-col items-center justify-center py-2 px-1 transition-colors ${
+                className={`flex flex-col items-center justify-center px-1 py-2 transition-colors ${
                   isActive
-                    ? 'text-blue-600 bg-blue-50'
-                    : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-blue-600'
                 }`}
               >
-                <span className="text-2xl mb-1">{item.icon}</span>
-                <span className="text-xs font-medium truncate w-full text-center">
-                  {item.name}
-                </span>
+                <span className="mb-1 text-2xl">{item.icon}</span>
+                <span className="w-full truncate text-center text-xs font-medium">{item.name}</span>
               </Link>
             )
           })}

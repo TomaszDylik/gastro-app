@@ -78,8 +78,8 @@ export default function ManagerDashboardPage() {
 
   if (loading && !stats) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-blue-600 text-lg">Ładowanie dashboard...</div>
+      <div className="flex h-64 items-center justify-center">
+        <div className="text-lg text-blue-600">Ładowanie dashboard...</div>
       </div>
     )
   }
@@ -90,13 +90,11 @@ export default function ManagerDashboardPage() {
         <h2 className="text-3xl font-bold text-gray-800">
           Dashboard - {restaurantName || 'Restauracja'} 👨‍💼
         </h2>
-        <p className="text-gray-600 mt-2">
-          Zarządzaj zespołem, grafikami i raportami
-        </p>
+        <p className="mt-2 text-gray-600">Zarządzaj zespołem, grafikami i raportami</p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           icon="⏰"
           title="Aktywne zmiany"
@@ -124,34 +122,26 @@ export default function ManagerDashboardPage() {
       </div>
 
       {/* Active Shifts - "Dzisiejsi na zmianie" */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-xl font-semibold text-gray-800 mb-4">
+      <div className="rounded-lg bg-white p-6 shadow-md">
+        <h3 className="mb-4 text-xl font-semibold text-gray-800">
           ⏰ Dzisiejsi na zmianie ({activeShifts.length})
         </h3>
 
         {activeShifts.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">
-            Brak aktywnych zmian w tej chwili
-          </p>
+          <p className="py-8 text-center text-gray-500">Brak aktywnych zmian w tej chwili</p>
         ) : (
           <div className="space-y-3">
             {activeShifts.map((shift) => (
-              <ActiveShiftCard
-                key={shift.id}
-                shift={shift}
-                onEndShift={handleEndShift}
-              />
+              <ActiveShiftCard key={shift.id} shift={shift} onEndShift={handleEndShift} />
             ))}
           </div>
         )}
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-xl font-semibold text-gray-800 mb-4">
-          Szybkie akcje
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="rounded-lg bg-white p-6 shadow-md">
+        <h3 className="mb-4 text-xl font-semibold text-gray-800">Szybkie akcje</h3>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <QuickActionButton
             icon="👥"
             label="Zaproś pracownika"
@@ -198,13 +188,11 @@ function StatCard({
   }
 
   return (
-    <div
-      className={`border-2 rounded-lg p-4 ${colorClasses[color as keyof typeof colorClasses]}`}
-    >
+    <div className={`rounded-lg border-2 p-4 ${colorClasses[color as keyof typeof colorClasses]}`}>
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium opacity-80">{title}</p>
-          <p className="text-3xl font-bold mt-1">{value}</p>
+          <p className="mt-1 text-3xl font-bold">{value}</p>
         </div>
         <span className="text-4xl opacity-50">{icon}</span>
       </div>
@@ -224,21 +212,22 @@ function ActiveShiftCard({
   const minutes = shift.elapsedMinutes % 60
 
   return (
-    <div className="flex items-center justify-between p-4 border-2 border-green-200 rounded-lg bg-green-50">
+    <div className="flex items-center justify-between rounded-lg border-2 border-green-200 bg-green-50 p-4">
       <div className="flex-1">
         <div className="flex items-center gap-2">
-          <span className="text-lg font-semibold text-gray-800">
-            {shift.employeeName}
-          </span>
-          <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
+          <span className="text-lg font-semibold text-gray-800">{shift.employeeName}</span>
+          <span className="rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-700">
             {shift.scheduleCategory}
           </span>
         </div>
-        <div className="text-sm text-gray-600 mt-1">
-          <span>Rozpoczęto: {new Date(shift.clockIn).toLocaleTimeString('pl-PL', {
-            hour: '2-digit',
-            minute: '2-digit',
-          })}</span>
+        <div className="mt-1 text-sm text-gray-600">
+          <span>
+            Rozpoczęto:{' '}
+            {new Date(shift.clockIn).toLocaleTimeString('pl-PL', {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </span>
           <span className="mx-2">•</span>
           <span className="font-medium text-green-600">
             {hours}h {minutes}min
@@ -248,7 +237,7 @@ function ActiveShiftCard({
 
       <button
         onClick={() => onEndShift(shift.id)}
-        className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium"
+        className="rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600"
       >
         ⏹️ Zakończ
       </button>
@@ -257,19 +246,11 @@ function ActiveShiftCard({
 }
 
 // Quick Action Button
-function QuickActionButton({
-  icon,
-  label,
-  href,
-}: {
-  icon: string
-  label: string
-  href: string
-}) {
+function QuickActionButton({ icon, label, href }: { icon: string; label: string; href: string }) {
   return (
     <a
       href={href}
-      className="flex items-center gap-3 p-4 border-2 border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors"
+      className="flex items-center gap-3 rounded-lg border-2 border-gray-200 p-4 transition-colors hover:border-blue-300 hover:bg-blue-50"
     >
       <span className="text-3xl">{icon}</span>
       <span className="font-medium text-gray-700">{label}</span>

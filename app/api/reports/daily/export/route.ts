@@ -6,7 +6,7 @@ const prisma = new PrismaClient()
 
 /**
  * GET /api/reports/daily/export?restaurantId=xxx&date=YYYY-MM-DD&format=csv|xlsx
- * 
+ *
  * Export daily report as CSV or XLSX
  */
 export async function GET(request: NextRequest) {
@@ -17,17 +17,11 @@ export async function GET(request: NextRequest) {
     const format = searchParams.get('format') || 'xlsx'
 
     if (!restaurantId || !dateParam) {
-      return NextResponse.json(
-        { error: 'restaurantId and date are required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'restaurantId and date are required' }, { status: 400 })
     }
 
     if (format !== 'csv' && format !== 'xlsx') {
-      return NextResponse.json(
-        { error: 'format must be csv or xlsx' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'format must be csv or xlsx' }, { status: 400 })
     }
 
     const date = new Date(dateParam)
@@ -40,54 +34,49 @@ export async function GET(request: NextRequest) {
     const timeEntries = await prisma.timeEntry.findMany({
       where: {
         schedule: {
-          restaurantId
+          restaurantId,
         },
         clockIn: {
           gte: date,
-          lte: dayEnd
-        }
+          lte: dayEnd,
+        },
       },
       include: {
         membership: {
           include: {
             user: true,
-            restaurant: true
-          }
-        }
+            restaurant: true,
+          },
+        },
       },
       orderBy: {
-        clockIn: 'asc'
-      }
+        clockIn: 'asc',
+      },
     })
 
     if (timeEntries.length === 0) {
-      return NextResponse.json(
-        { error: 'No time entries found for this date' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'No time entries found for this date' }, { status: 404 })
     }
 
     // Get approver names
     const approverIds = timeEntries
-      .filter(e => e.approvedByUserId)
-      .map(e => e.approvedByUserId!)
+      .filter((e) => e.approvedByUserId)
+      .map((e) => e.approvedByUserId!)
 
     const approvers = await prisma.appUser.findMany({
       where: {
         id: {
-          in: approverIds
-        }
-      }
+          in: approverIds,
+        },
+      },
     })
 
-    const approverNames = new Map(
-      approvers.map(a => [a.id, a.name || a.email || a.id])
-    )
+    const approverNames = new Map(approvers.map((a) => [a.id, a.name || a.email || a.id]))
 
     // Format data
     const exportData = formatDailyExport({
       timeEntries: timeEntries as any,
-      approverNames
+      approverNames,
     })
 
     const restaurantName = timeEntries[0]?.membership.restaurant.name || 'Restaurant'
@@ -102,8 +91,8 @@ export async function GET(request: NextRequest) {
         headers: {
           'Content-Type': 'text/csv; charset=utf-8',
           'Content-Disposition': `attachment; filename="${filename}"`,
-          'Cache-Control': 'no-cache'
-        }
+          'Cache-Control': 'no-cache',
+        },
       })
     } else {
       // XLSX
@@ -114,16 +103,12 @@ export async function GET(request: NextRequest) {
         headers: {
           'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           'Content-Disposition': `attachment; filename="${filename}"`,
-          'Cache-Control': 'no-cache'
-        }
+          'Cache-Control': 'no-cache',
+        },
       })
     }
-
   } catch (error) {
     console.error('❌ Daily export error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

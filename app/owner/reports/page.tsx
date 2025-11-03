@@ -62,7 +62,7 @@ export default function OwnerReportsPage() {
         <div className="flex gap-2">
           <button
             onClick={() => setView('weekly')}
-            className={`px-4 py-2 rounded-lg transition-colors ${
+            className={`rounded-lg px-4 py-2 transition-colors ${
               view === 'weekly'
                 ? 'bg-purple-600 text-white'
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -72,7 +72,7 @@ export default function OwnerReportsPage() {
           </button>
           <button
             onClick={() => setView('monthly')}
-            className={`px-4 py-2 rounded-lg transition-colors ${
+            className={`rounded-lg px-4 py-2 transition-colors ${
               view === 'monthly'
                 ? 'bg-purple-600 text-white'
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -84,7 +84,7 @@ export default function OwnerReportsPage() {
       </div>
 
       {loading ? (
-        <div className="text-center py-12">Ładowanie raportów...</div>
+        <div className="py-12 text-center">Ładowanie raportów...</div>
       ) : view === 'weekly' ? (
         <WeeklyReportsView reports={weeklyReports} />
       ) : (
@@ -97,59 +97,59 @@ export default function OwnerReportsPage() {
 function WeeklyReportsView({ reports }: { reports: WeeklyReport[] }) {
   if (reports.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-12 text-center">
+      <div className="rounded-lg bg-white p-12 text-center shadow-md">
         <p className="text-gray-500">Brak raportów tygodniowych</p>
       </div>
     )
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
+    <div className="overflow-hidden rounded-lg bg-white shadow-md">
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
               Tydzień
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
               Restauracja
             </th>
-            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
               Godziny
             </th>
-            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
               Kwota (PLN)
             </th>
-            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
               Pracowników
             </th>
-            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
               Akcje
             </th>
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
+        <tbody className="divide-y divide-gray-200 bg-white">
           {reports.map((report) => (
             <tr key={report.id} className="hover:bg-gray-50">
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
                 {new Date(report.weekStart).toLocaleDateString('pl-PL')}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
                 {report.restaurantName}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+              <td className="whitespace-nowrap px-6 py-4 text-right text-sm text-gray-900">
                 {report.totalHours.toFixed(2)} h
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">
+              <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-semibold text-gray-900">
                 {report.totalAmount.toFixed(2)} PLN
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+              <td className="whitespace-nowrap px-6 py-4 text-right text-sm text-gray-900">
                 {report.employeeCount}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+              <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
                 <a
                   href={`/api/reports/weekly/export?id=${report.id}&format=xlsx`}
-                  className="text-purple-600 hover:text-purple-800 font-medium"
+                  className="font-medium text-purple-600 hover:text-purple-800"
                 >
                   📥 Pobierz
                 </a>
@@ -165,62 +165,62 @@ function WeeklyReportsView({ reports }: { reports: WeeklyReport[] }) {
 function MonthlyReportsView({ reports }: { reports: MonthlyReport[] }) {
   if (reports.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-12 text-center">
+      <div className="rounded-lg bg-white p-12 text-center shadow-md">
         <p className="text-gray-500">Brak raportów miesięcznych</p>
       </div>
     )
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
+    <div className="overflow-hidden rounded-lg bg-white shadow-md">
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
               Miesiąc
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
               Restauracja
             </th>
-            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
               Godziny
             </th>
-            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
               Kwota (PLN)
             </th>
-            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
               Pracowników
             </th>
-            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
               Akcje
             </th>
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
+        <tbody className="divide-y divide-gray-200 bg-white">
           {reports.map((report) => (
             <tr key={report.id} className="hover:bg-gray-50">
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
                 {new Date(report.periodMonth).toLocaleDateString('pl-PL', {
                   year: 'numeric',
                   month: 'long',
                 })}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
                 {report.restaurantName}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+              <td className="whitespace-nowrap px-6 py-4 text-right text-sm text-gray-900">
                 {report.totalHours.toFixed(2)} h
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">
+              <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-semibold text-gray-900">
                 {report.totalAmount.toFixed(2)} PLN
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+              <td className="whitespace-nowrap px-6 py-4 text-right text-sm text-gray-900">
                 {report.employeeCount}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+              <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
                 <a
                   href={`/api/reports/monthly/export?id=${report.id}&format=xlsx`}
-                  className="text-purple-600 hover:text-purple-800 font-medium"
+                  className="font-medium text-purple-600 hover:text-purple-800"
                 >
                   📥 Pobierz
                 </a>

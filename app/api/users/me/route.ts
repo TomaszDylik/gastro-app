@@ -9,45 +9,41 @@ export const dynamic = 'force-dynamic'
 
 /**
  * GET /api/users/me
- * 
+ *
  * Get current user profile with memberships
  */
 export async function GET() {
   try {
     // 1. Authenticate
     const supabase = createRouteHandlerClient({ cookies })
-    const { data: { session } } = await supabase.auth.getSession()
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
 
     if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // 2. Get user from database
     const user = await prisma.appUser.findUnique({
       where: {
-        authUserId: session.user.id
+        authUserId: session.user.id,
       },
       include: {
         memberships: {
           include: {
             restaurant: {
               include: {
-                company: true
-              }
-            }
-          }
-        }
-      }
+                company: true,
+              },
+            },
+          },
+        },
+      },
     })
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found in database' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'User not found in database' }, { status: 404 })
     }
 
     // 3. Return user data
@@ -59,7 +55,7 @@ export async function GET() {
       phone: user.phone,
       locale: user.locale,
       hourlyRateDefaultPLN: user.hourlyRateDefaultPLN?.toString(),
-      memberships: user.memberships.map(m => ({
+      memberships: user.memberships.map((m) => ({
         id: m.id,
         role: m.role,
         status: m.status,
@@ -68,20 +64,18 @@ export async function GET() {
           id: m.restaurant.id,
           name: m.restaurant.name,
           timezone: m.restaurant.timezone,
-          company: m.restaurant.company ? {
-            id: m.restaurant.company.id,
-            name: m.restaurant.company.name
-          } : null
-        }
-      }))
+          company: m.restaurant.company
+            ? {
+                id: m.restaurant.company.id,
+                name: m.restaurant.company.name,
+              }
+            : null,
+        },
+      })),
     })
-
   } catch (error) {
     console.error('Error fetching user profile:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   } finally {
     await prisma.$disconnect()
   }
@@ -89,22 +83,21 @@ export async function GET() {
 
 /**
  * PATCH /api/users/me
- * 
+ *
  * Update current user profile
- * 
+ *
  * Body: { name?, phone?, locale?, hourlyRateDefaultPLN? }
  */
 export async function PATCH(request: NextRequest) {
   try {
     // 1. Authenticate
     const supabase = createRouteHandlerClient({ cookies })
-    const { data: { session } } = await supabase.auth.getSession()
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
 
     if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // 2. Parse body
@@ -114,16 +107,16 @@ export async function PATCH(request: NextRequest) {
     // 3. Update user
     const updatedUser = await prisma.appUser.update({
       where: {
-        authUserId: session.user.id
+        authUserId: session.user.id,
       },
       data: {
         ...(name !== undefined && { name }),
         ...(phone !== undefined && { phone }),
         ...(locale !== undefined && { locale }),
-        ...(hourlyRateDefaultPLN !== undefined && { 
-          hourlyRateDefaultPLN: hourlyRateDefaultPLN ? parseFloat(hourlyRateDefaultPLN) : null 
-        })
-      }
+        ...(hourlyRateDefaultPLN !== undefined && {
+          hourlyRateDefaultPLN: hourlyRateDefaultPLN ? parseFloat(hourlyRateDefaultPLN) : null,
+        }),
+      },
     })
 
     return NextResponse.json({
@@ -132,15 +125,11 @@ export async function PATCH(request: NextRequest) {
       email: updatedUser.email,
       phone: updatedUser.phone,
       locale: updatedUser.locale,
-      hourlyRateDefaultPLN: updatedUser.hourlyRateDefaultPLN?.toString()
+      hourlyRateDefaultPLN: updatedUser.hourlyRateDefaultPLN?.toString(),
     })
-
   } catch (error) {
     console.error('Error updating user profile:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   } finally {
     await prisma.$disconnect()
   }

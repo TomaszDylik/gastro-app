@@ -10,8 +10,8 @@ const supabaseAdmin = createClient(
   {
     auth: {
       autoRefreshToken: false,
-      persistSession: false
-    }
+      persistSession: false,
+    },
   }
 )
 
@@ -27,9 +27,9 @@ async function main() {
       name: 'Pod Gruszą',
       timezone: 'Europe/Warsaw',
       settings: {
-        create: {}
-      }
-    }
+        create: {},
+      },
+    },
   })
   console.log('✅ Restaurant created:', restaurant.name)
 
@@ -45,10 +45,10 @@ async function main() {
     password: password,
     email_confirm: true,
     user_metadata: {
-      name: 'Paweł Kowalski'
-    }
+      name: 'Paweł Kowalski',
+    },
   })
-  
+
   if (managerError && !managerError.message.includes('already')) {
     throw managerError
   }
@@ -60,10 +60,10 @@ async function main() {
     password: password,
     email_confirm: true,
     user_metadata: {
-      name: 'Anna Kowalska'
-    }
+      name: 'Anna Kowalska',
+    },
   })
-  
+
   if (emp1Error && !emp1Error.message.includes('already')) {
     throw emp1Error
   }
@@ -75,10 +75,10 @@ async function main() {
     password: password,
     email_confirm: true,
     user_metadata: {
-      name: 'Jan Nowak'
-    }
+      name: 'Jan Nowak',
+    },
   })
-  
+
   if (emp2Error && !emp2Error.message.includes('already')) {
     throw emp2Error
   }
@@ -93,8 +93,8 @@ async function main() {
       name: 'Paweł Kowalski',
       email: managerEmail,
       phone: '+48 600 100 200',
-      hourlyRateDefaultPLN: '45.00'
-    }
+      hourlyRateDefaultPLN: '45.00',
+    },
   })
 
   const emp1User = await prisma.appUser.upsert({
@@ -105,8 +105,8 @@ async function main() {
       name: 'Anna Kowalska',
       email: employee1Email,
       phone: '+48 600 100 201',
-      hourlyRateDefaultPLN: '35.00'
-    }
+      hourlyRateDefaultPLN: '35.00',
+    },
   })
 
   const emp2User = await prisma.appUser.upsert({
@@ -117,8 +117,8 @@ async function main() {
       name: 'Jan Nowak',
       email: employee2Email,
       phone: '+48 600 100 202',
-      hourlyRateDefaultPLN: '40.00'
-    }
+      hourlyRateDefaultPLN: '40.00',
+    },
   })
 
   console.log('✅ Users created in database')
@@ -130,8 +130,8 @@ async function main() {
       restaurantId: restaurant.id,
       role: 'manager',
       status: 'active',
-      hourlyRateManagerPLN: '55.00'  // Manager rate for this manager
-    }
+      hourlyRateManagerPLN: '55.00', // Manager rate for this manager
+    },
   })
 
   const emp1Membership = await prisma.membership.create({
@@ -139,9 +139,9 @@ async function main() {
       userId: emp1User.id,
       restaurantId: restaurant.id,
       role: 'employee',
-      status: 'active'
+      status: 'active',
       // Uses hourlyRateDefaultPLN from AppUser (35.00)
-    }
+    },
   })
 
   const emp2Membership = await prisma.membership.create({
@@ -149,9 +149,9 @@ async function main() {
       userId: emp2User.id,
       restaurantId: restaurant.id,
       role: 'employee',
-      status: 'active'
+      status: 'active',
       // Uses hourlyRateDefaultPLN from AppUser (40.00)
-    }
+    },
   })
 
   console.log('✅ Memberships created')
@@ -160,8 +160,8 @@ async function main() {
   const schedule = await prisma.schedule.create({
     data: {
       name: 'Grafik Listopad 2025',
-      restaurantId: restaurant.id
-    }
+      restaurantId: restaurant.id,
+    },
   })
 
   console.log('✅ Schedule created')
@@ -174,18 +174,18 @@ async function main() {
     data: {
       scheduleId: schedule.id,
       start: new Date(today.getTime() + 9 * 60 * 60 * 1000), // 9:00
-      end: new Date(today.getTime() + 17 * 60 * 60 * 1000),   // 17:00
-      roleTag: 'Kelnerka'
-    }
+      end: new Date(today.getTime() + 17 * 60 * 60 * 1000), // 17:00
+      roleTag: 'Kelnerka',
+    },
   })
 
   const shift2 = await prisma.shift.create({
     data: {
       scheduleId: schedule.id,
       start: new Date(today.getTime() + 10 * 60 * 60 * 1000), // 10:00
-      end: new Date(today.getTime() + 18 * 60 * 60 * 1000),   // 18:00
-      roleTag: 'Kucharz'
-    }
+      end: new Date(today.getTime() + 18 * 60 * 60 * 1000), // 18:00
+      roleTag: 'Kucharz',
+    },
   })
 
   // 7. Przypisz pracowników do zmian
@@ -194,14 +194,14 @@ async function main() {
       {
         shiftId: shift1.id,
         membershipId: emp1Membership.id,
-        status: 'assigned'
+        status: 'assigned',
       },
       {
         shiftId: shift2.id,
         membershipId: emp2Membership.id,
-        status: 'assigned'
-      }
-    ]
+        status: 'assigned',
+      },
+    ],
   })
 
   console.log('✅ Shifts and assignments created for today')
@@ -222,7 +222,7 @@ async function main() {
 }
 
 main()
-  .catch(e => { 
+  .catch((e) => {
     console.error('❌ Seed error:', e)
     process.exit(1)
   })

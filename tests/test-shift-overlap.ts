@@ -17,16 +17,16 @@ function createDate(hour: number, minute: number = 0): Date {
 console.log('Test 1: No overlap - separate shifts')
 const shift1 = {
   id: 'shift-1',
-  start: createDate(9, 0),   // 9:00
-  end: createDate(12, 0),     // 12:00
-  membershipId: 'member-1'
+  start: createDate(9, 0), // 9:00
+  end: createDate(12, 0), // 12:00
+  membershipId: 'member-1',
 }
 
 const shift2 = {
   id: 'shift-2',
-  start: createDate(14, 0),   // 14:00
-  end: createDate(18, 0),     // 18:00
-  membershipId: 'member-1'
+  start: createDate(14, 0), // 14:00
+  end: createDate(18, 0), // 18:00
+  membershipId: 'member-1',
 }
 
 const result1 = validateNoOverlap(shift1, [shift2])
@@ -40,16 +40,16 @@ console.log('  ✅ PASSED\n')
 console.log('Test 2: Complete overlap - shift inside another')
 const shift3 = {
   id: 'shift-3',
-  start: createDate(10, 0),   // 10:00
-  end: createDate(16, 0),     // 16:00
-  membershipId: 'member-1'
+  start: createDate(10, 0), // 10:00
+  end: createDate(16, 0), // 16:00
+  membershipId: 'member-1',
 }
 
 const shift4 = {
   id: 'shift-4',
-  start: createDate(12, 0),   // 12:00
-  end: createDate(14, 0),     // 14:00
-  membershipId: 'member-1'
+  start: createDate(12, 0), // 12:00
+  end: createDate(14, 0), // 14:00
+  membershipId: 'member-1',
 }
 
 const result2 = validateNoOverlap(shift4, [shift3])
@@ -65,16 +65,16 @@ console.log('  ✅ PASSED\n')
 console.log('Test 3: Partial overlap - shifts partially overlap')
 const shift5 = {
   id: 'shift-5',
-  start: createDate(9, 0),    // 9:00
-  end: createDate(13, 0),     // 13:00
-  membershipId: 'member-1'
+  start: createDate(9, 0), // 9:00
+  end: createDate(13, 0), // 13:00
+  membershipId: 'member-1',
 }
 
 const shift6 = {
   id: 'shift-6',
-  start: createDate(11, 0),   // 11:00
-  end: createDate(15, 0),     // 15:00
-  membershipId: 'member-1'
+  start: createDate(11, 0), // 11:00
+  end: createDate(15, 0), // 15:00
+  membershipId: 'member-1',
 }
 
 const result3 = validateNoOverlap(shift5, [shift6])
@@ -90,16 +90,16 @@ console.log('  ✅ PASSED\n')
 console.log('Test 4: Adjacent shifts - no overlap')
 const shift7 = {
   id: 'shift-7',
-  start: createDate(9, 0),    // 9:00
-  end: createDate(12, 0),     // 12:00
-  membershipId: 'member-1'
+  start: createDate(9, 0), // 9:00
+  end: createDate(12, 0), // 12:00
+  membershipId: 'member-1',
 }
 
 const shift8 = {
   id: 'shift-8',
-  start: createDate(12, 0),   // 12:00
-  end: createDate(15, 0),     // 15:00
-  membershipId: 'member-1'
+  start: createDate(12, 0), // 12:00
+  end: createDate(15, 0), // 15:00
+  membershipId: 'member-1',
 }
 
 const result4 = validateNoOverlap(shift7, [shift8])
@@ -113,36 +113,39 @@ console.log('  ✅ PASSED\n')
 console.log('Test 5: Multiple conflicts - one shift overlaps with several')
 const newShift = {
   id: 'new-shift',
-  start: createDate(10, 0),   // 10:00
-  end: createDate(16, 0),     // 16:00
-  membershipId: 'member-1'
+  start: createDate(10, 0), // 10:00
+  end: createDate(16, 0), // 16:00
+  membershipId: 'member-1',
 }
 
 const existingShifts: ShiftTimeSlot[] = [
   {
     id: 'existing-1',
-    start: createDate(9, 0),    // 9:00
-    end: createDate(11, 0),     // 11:00
-    membershipId: 'member-1'
+    start: createDate(9, 0), // 9:00
+    end: createDate(11, 0), // 11:00
+    membershipId: 'member-1',
   },
   {
     id: 'existing-2',
-    start: createDate(12, 0),   // 12:00
-    end: createDate(14, 0),     // 14:00
-    membershipId: 'member-1'
+    start: createDate(12, 0), // 12:00
+    end: createDate(14, 0), // 14:00
+    membershipId: 'member-1',
   },
   {
     id: 'existing-3',
-    start: createDate(15, 0),   // 15:00
-    end: createDate(17, 0),     // 17:00
-    membershipId: 'member-1'
-  }
+    start: createDate(15, 0), // 15:00
+    end: createDate(17, 0), // 17:00
+    membershipId: 'member-1',
+  },
 ]
 
 const result5 = validateNoOverlap(newShift, existingShifts)
 console.log('  hasOverlap:', result5.hasOverlap)
 console.log('  conflicts:', result5.conflicts.length)
-console.log('  conflict IDs:', result5.conflicts.map(c => c.conflictingShiftId))
+console.log(
+  '  conflict IDs:',
+  result5.conflicts.map((c) => c.conflictingShiftId)
+)
 console.assert(result5.hasOverlap === true, 'Should have overlap')
 console.assert(result5.conflicts.length === 3, 'Should have three conflicts')
 console.log('  ✅ PASSED\n')
@@ -151,24 +154,24 @@ console.log('  ✅ PASSED\n')
 console.log('Test 6: Self-comparison ignored when editing')
 const editedShift = {
   id: 'shift-to-edit',
-  start: createDate(10, 0),   // 10:00
-  end: createDate(14, 0),     // 14:00
-  membershipId: 'member-1'
+  start: createDate(10, 0), // 10:00
+  end: createDate(14, 0), // 14:00
+  membershipId: 'member-1',
 }
 
 const shiftsIncludingSelf: ShiftTimeSlot[] = [
   {
-    id: 'shift-to-edit',  // Same ID
+    id: 'shift-to-edit', // Same ID
     start: createDate(10, 0),
     end: createDate(14, 0),
-    membershipId: 'member-1'
+    membershipId: 'member-1',
   },
   {
     id: 'other-shift',
-    start: createDate(16, 0),   // 16:00
-    end: createDate(18, 0),     // 18:00
-    membershipId: 'member-1'
-  }
+    start: createDate(16, 0), // 16:00
+    end: createDate(18, 0), // 18:00
+    membershipId: 'member-1',
+  },
 ]
 
 const result6 = validateNoOverlap(editedShift, shiftsIncludingSelf)
@@ -182,16 +185,16 @@ console.log('  ✅ PASSED\n')
 console.log('Test 7: One-minute overlap')
 const shift9 = {
   id: 'shift-9',
-  start: createDate(9, 0),    // 9:00
-  end: createDate(12, 1),     // 12:01
-  membershipId: 'member-1'
+  start: createDate(9, 0), // 9:00
+  end: createDate(12, 1), // 12:01
+  membershipId: 'member-1',
 }
 
 const shift10 = {
   id: 'shift-10',
-  start: createDate(12, 0),   // 12:00
-  end: createDate(15, 0),     // 15:00
-  membershipId: 'member-1'
+  start: createDate(12, 0), // 12:00
+  end: createDate(15, 0), // 15:00
+  membershipId: 'member-1',
 }
 
 const result7 = validateNoOverlap(shift9, [shift10])

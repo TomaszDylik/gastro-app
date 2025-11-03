@@ -361,6 +361,29 @@ pnpm test
 - [ ] API: Team Management
 - [ ] API: Schedules Management
 
+### Update 3 listopada 2025 (Sesja 2 - część 2) - User Settings API ✅
+
+**3. API: User Profile & Settings**
+- ✅ GET/PATCH `/api/users/me` - already existed from previous work
+- ✅ Created PUT `/api/users/me/password` endpoint
+  - Validates current password before changing
+  - Requires min. 8 characters
+  - Uses Supabase auth.updateUser
+- ✅ Created GET/PUT `/api/users/me/preferences` endpoint
+  - Added `preferences Json` field to AppUser schema (manual Supabase migration)
+  - Stores: notifications (email/push/sms), theme, language
+  - Returns defaults if no preferences set
+  - Auto-merges with existing preferences
+- 🔄 Settings page ready for API integration (will do in next session)
+
+### 📊 Progress: 4/7 API endpoints done (57%)
+
+### Następne kroki:
+- [ ] Integrate Settings Page with API
+- [ ] API: Availability Management
+- [ ] API: Team Management
+- [ ] API: Schedules Management
+
 ---
 
 💡 **Pro tip:** Jak wrócisz do projektu, po prostu napisz "Kontynuuj pracę nad gastro app" i GitHub Copilot załaduje cały ten kontekst!

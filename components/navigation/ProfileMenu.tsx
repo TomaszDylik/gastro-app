@@ -78,7 +78,9 @@ export function ProfileMenu({ user }: ProfileMenuProps) {
   }
 
   const getInitials = () => {
-    return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
+    const firstInitial = user.firstName?.[0] || user.email?.[0] || 'U'
+    const lastInitial = user.lastName?.[0] || user.email?.[1] || 'S'
+    return `${firstInitial}${lastInitial}`.toUpperCase()
   }
 
   const getAvatarGradient = () => {

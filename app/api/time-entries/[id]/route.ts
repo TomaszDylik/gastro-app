@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 import { canEditTimeEntry } from '@/lib/time-entry-permissions'
+import { createAuditLog } from '@/lib/audit'
 
 const prisma = new PrismaClient()
 
@@ -102,10 +103,32 @@ export async function PATCH(
       data: updateData,
       include: {
         membership: {
-          include: { user: true }
+          include: { user: true, restaurant: true }
         },
         schedule: true
       }
+    })
+
+    // Log the edit to audit
+    await createAuditLog({
+      actorUserId: userId,
+      restaurantId: updatedTimeEntry.membership.restaurantId,
+      entityType: 'TimeEntry',
+      entityId: timeEntryId,
+      action: 'time_entry.edit',
+      before: {
+        clockIn: timeEntry.clockIn.toISOString(),
+        clockOut: timeEntry.clockOut?.toISOString() || null,
+        reason: timeEntry.reason,
+        adjustmentMinutes: timeEntry.adjustmentMinutes,
+      },
+      after: {
+        clockIn: updatedTimeEntry.clockIn.toISOString(),
+        clockOut: updatedTimeEntry.clockOut?.toISOString() || null,
+        reason: updatedTimeEntry.reason,
+        adjustmentMinutes: updatedTimeEntry.adjustmentMinutes,
+        editedBy: userRole,
+      },
     })
 
     return NextResponse.json({

@@ -1,24 +1,45 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 
+interface UserData {
+  id: string
+  name: string | null
+  email: string | null
+  phone: string | null
+  locale: string
+}
+
+interface Preferences {
+  notifications: {
+    email: boolean
+    push: boolean
+    sms: boolean
+  }
+  theme: string
+  language: string
+}
+
 export default function SettingsPage() {
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+  
+  const [userData, setUserData] = useState<UserData | null>(null)
+  const [preferences, setPreferences] = useState<Preferences>({
+    notifications: { email: true, push: false, sms: false },
+    theme: 'light',
+    language: 'pl-PL',
+  })
+
   const [formData, setFormData] = useState({
-    firstName: 'Anna',
-    lastName: 'Kowalska',
-    email: 'anna.kowalska@example.com',
-    phone: '+48 123 456 789',
-    language: 'pl',
-    notifications: {
-      email: true,
-      push: true,
-      sms: false
-    },
-    theme: 'light'
+    name: '',
+    phone: '',
   })
 
   const [passwords, setPasswords] = useState({
@@ -27,30 +48,165 @@ export default function SettingsPage() {
     confirm: ''
   })
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-  }
+  useEffect(() => {
+    loadUserData()
+  }, [])
 
-  const handleNotificationToggle = (type: 'email' | 'push' | 'sms') => {
-    setFormData(prev => ({
-      ...prev,
-      notifications: { ...prev.notifications, [type]: !prev.notifications[type] }
-    }))
-  }
+  const loadUserData = async () => {
+    try {
+      setLoading(true)
+      
+      const userRes = await fetch('/api/users/me')
+      if (!userRes.ok) throw new Error('Failed to load user data')
+      const user = await userRes.json()
+      
+      setUserData(user)
+      setFormData({
+        name: user.name || '',
+        phone: user.phone || '',
+      })
 
-  const handleSaveProfile = () => {
-    console.log('Zapisywanie profilu:', formData)
-    alert('Profil zapisany!')
-  }
-
-  const handleChangePassword = () => {
-    if (passwords.new !== passwords.confirm) {
-      alert('Nowe hasła nie są identyczne!')
-      return
+      const prefRes = await fetch('/api/users/me/preferences')
+      if (prefRes.ok) {
+        const prefs = await prefRes.json()
+        setPreferences(prefs)
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load settings')
+    } finally {
+      setLoading(false)
     }
-    console.log('Zmiana hasła')
-    alert('Hasło zmienione!')
-    setPasswords({ current: '', new: '', confirm: '' })
+  }
+
+  const handleSaveProfile = async () => {
+    try {
+      setSaving(true)
+      setError(null)
+      setSuccess(null)
+
+      const res = await fetch('/api/users/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          phone: formData.phone,
+        }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to save profile')
+      }
+
+      setSuccess('Profil zapisany pomyślnie! ✅')
+      await loadUserData()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleSavePreferences = async () => {
+    try {
+      setSaving(true)
+      setError(null)
+      setSuccess(null)
+
+      const res = await fetch('/api/users/me/preferences', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(preferences),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to save preferences')
+      }
+
+      setSuccess('Preferencje zapisane pomyślnie! ✅')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleChangePassword = async () => {
+    try {
+      setError(null)
+      setSuccess(null)
+
+      if (!passwords.current || !passwords.new || !passwords.confirm) {
+        setError('Wszystkie pola hasła są wymagane')
+        return
+      }
+
+      if (passwords.new !== passwords.confirm) {
+        setError('Nowe hasła nie są identyczne!')
+        return
+      }
+
+      if (passwords.new.length < 8) {
+        setError('Nowe hasło musi mieć min. 8 znaków')
+        return
+      }
+
+      setSaving(true)
+
+      const res = await fetch('/api/users/me/password', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentPassword: passwords.current,
+          newPassword: passwords.new,
+        }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to change password')
+      }
+
+      setSuccess('Hasło zmienione pomyślnie! ✅')
+      setPasswords({ current: '', new: '', confirm: '' })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleNotificationToggle = async (type: 'email' | 'push' | 'sms') => {
+    const newPreferences = {
+      ...preferences,
+      notifications: {
+        ...preferences.notifications,
+        [type]: !preferences.notifications[type],
+      },
+    }
+    setPreferences(newPreferences)
+    
+    try {
+      await fetch('/api/users/me/preferences', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newPreferences),
+      })
+    } catch (err) {
+      console.error('Failed to save notification preference:', err)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 p-4 md:p-8 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-4xl mb-4">⏳</div>
+          <div className="text-xl font-semibold text-gray-700">Ładowanie ustawień...</div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -63,6 +219,28 @@ export default function SettingsPage() {
           <p className="text-gray-600">Zarządzaj swoim profilem i preferencjami</p>
         </div>
 
+        {error && (
+          <Card variant="glass" className="border-2 border-red-300 bg-red-50/50">
+            <CardBody>
+              <div className="flex items-center gap-3 text-red-700">
+                <span className="text-2xl">❌</span>
+                <span className="font-semibold">{error}</span>
+              </div>
+            </CardBody>
+          </Card>
+        )}
+
+        {success && (
+          <Card variant="glass" className="border-2 border-green-300 bg-green-50/50">
+            <CardBody>
+              <div className="flex items-center gap-3 text-green-700">
+                <span className="text-2xl">✅</span>
+                <span className="font-semibold">{success}</span>
+              </div>
+            </CardBody>
+          </Card>
+        )}
+
         <Card variant="glass">
           <CardHeader>
             <h2 className="text-2xl font-bold">👤 Profil</h2>
@@ -70,31 +248,31 @@ export default function SettingsPage() {
           <CardBody>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <Input
-                label="Imię"
-                value={formData.firstName}
-                onChange={(e) => handleInputChange('firstName', e.target.value)}
-              />
-              <Input
-                label="Nazwisko"
-                value={formData.lastName}
-                onChange={(e) => handleInputChange('lastName', e.target.value)}
-              />
-              <Input
-                label="Email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
+                label="Imię i nazwisko"
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({...prev, name: e.target.value}))}
               />
               <Input
                 label="Telefon"
                 type="tel"
                 value={formData.phone}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
+                onChange={(e) => setFormData(prev => ({...prev, phone: e.target.value}))}
+              />
+              <Input
+                label="Email"
+                type="email"
+                value={userData?.email || ''}
+                disabled
+                className="opacity-60 cursor-not-allowed col-span-full md:col-span-2"
               />
             </div>
             <div className="mt-6 flex justify-end">
-              <Button variant="primary" onClick={handleSaveProfile}>
-                💾 Zapisz zmiany
+              <Button 
+                variant="primary" 
+                onClick={handleSaveProfile}
+                disabled={saving}
+              >
+                {saving ? '💾 Zapisywanie...' : '💾 Zapisz zmiany'}
               </Button>
             </div>
           </CardBody>
@@ -114,12 +292,12 @@ export default function SettingsPage() {
                 <button
                   onClick={() => handleNotificationToggle('email')}
                   className={`relative h-8 w-14 rounded-full transition-colors ${
-                    formData.notifications.email ? 'bg-green-500' : 'bg-gray-300'
+                    preferences.notifications.email ? 'bg-green-500' : 'bg-gray-300'
                   }`}
                 >
                   <div
                     className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow-md transition-transform ${
-                      formData.notifications.email ? 'translate-x-7' : 'translate-x-1'
+                      preferences.notifications.email ? 'translate-x-7' : 'translate-x-1'
                     }`}
                   />
                 </button>
@@ -133,12 +311,12 @@ export default function SettingsPage() {
                 <button
                   onClick={() => handleNotificationToggle('push')}
                   className={`relative h-8 w-14 rounded-full transition-colors ${
-                    formData.notifications.push ? 'bg-green-500' : 'bg-gray-300'
+                    preferences.notifications.push ? 'bg-green-500' : 'bg-gray-300'
                   }`}
                 >
                   <div
                     className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow-md transition-transform ${
-                      formData.notifications.push ? 'translate-x-7' : 'translate-x-1'
+                      preferences.notifications.push ? 'translate-x-7' : 'translate-x-1'
                     }`}
                   />
                 </button>
@@ -152,12 +330,12 @@ export default function SettingsPage() {
                 <button
                   onClick={() => handleNotificationToggle('sms')}
                   className={`relative h-8 w-14 rounded-full transition-colors ${
-                    formData.notifications.sms ? 'bg-green-500' : 'bg-gray-300'
+                    preferences.notifications.sms ? 'bg-green-500' : 'bg-gray-300'
                   }`}
                 >
                   <div
                     className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow-md transition-transform ${
-                      formData.notifications.sms ? 'translate-x-7' : 'translate-x-1'
+                      preferences.notifications.sms ? 'translate-x-7' : 'translate-x-1'
                     }`}
                   />
                 </button>
@@ -208,20 +386,19 @@ export default function SettingsPage() {
               <div>
                 <label className="mb-2 block text-sm font-medium text-gray-700">Język</label>
                 <select
-                  value={formData.language}
-                  onChange={(e) => handleInputChange('language', e.target.value)}
+                  value={preferences.language}
+                  onChange={(e) => setPreferences(prev => ({...prev, language: e.target.value as 'pl' | 'en'}))}
                   className="w-full rounded-xl border border-white/40 bg-white/60 px-4 py-2 backdrop-blur-xl transition-all hover:border-purple-300 focus:border-purple-500 focus:outline-none"
                 >
                   <option value="pl">🇵🇱 Polski</option>
                   <option value="en">🇬🇧 English</option>
-                  <option value="de">🇩🇪 Deutsch</option>
                 </select>
               </div>
               <div>
                 <label className="mb-2 block text-sm font-medium text-gray-700">Motyw</label>
                 <select
-                  value={formData.theme}
-                  onChange={(e) => handleInputChange('theme', e.target.value)}
+                  value={preferences.theme}
+                  onChange={(e) => setPreferences(prev => ({...prev, theme: e.target.value as 'light' | 'dark' | 'auto'}))}
                   className="w-full rounded-xl border border-white/40 bg-white/60 px-4 py-2 backdrop-blur-xl transition-all hover:border-purple-300 focus:border-purple-500 focus:outline-none"
                 >
                   <option value="light">☀️ Jasny</option>
@@ -229,6 +406,15 @@ export default function SettingsPage() {
                   <option value="auto">🔄 Automatyczny</option>
                 </select>
               </div>
+            </div>
+            <div className="mt-6 flex justify-end">
+              <Button 
+                variant="primary" 
+                onClick={handleSavePreferences}
+                disabled={saving}
+              >
+                {saving ? '💾 Zapisywanie...' : '💾 Zapisz preferencje'}
+              </Button>
             </div>
           </CardBody>
         </Card>

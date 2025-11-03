@@ -152,15 +152,29 @@ model PayrollMonthly {
 }
 
 model Invite {
-  id           String    @id @default(cuid())
-  restaurantId String
-  contact      String
-  role         InviteRole
-  tokenHash    String
-  expiresAt    DateTime
-  usedAt       DateTime?
+  id                String         @id @default(cuid())
+  restaurantId      String
+  contact           String         // Deprecated - use email
+  email             String
+  firstName         String
+  lastName          String
+  role              InviteRole
+  hourlyRate        Decimal        @db.Decimal(10,2)
+  tokenHash         String         // Deprecated - use token
+  token             String         @unique
+  expiresAt         DateTime
+  usedAt            DateTime?      // Deprecated - use acceptedAt
+  status            InviteStatus   @default(pending)
+  invitedById       String
+  acceptedAt        DateTime?
+  acceptedByUserId  String?
+  createdAt         DateTime       @default(now())
 
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurant        Restaurant     @relation(fields: [restaurantId], references: [id])
+  
+  @@index([token])
+  @@index([email])
+  @@index([restaurantId])
 }
 
 model AuditLog {
@@ -266,6 +280,13 @@ enum Role {
 enum InviteRole {
   manager
   employee
+}
+
+enum InviteStatus {
+  pending
+  accepted
+  expired
+  cancelled
 }
 
 enum Status {

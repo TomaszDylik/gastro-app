@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -16,14 +16,57 @@ interface Availability {
 
 export default function AvailabilityPage() {
   const [availability, setAvailability] = useState<Availability>({
-    mon: { morning: true, afternoon: true, evening: false },
-    tue: { morning: true, afternoon: true, evening: true },
-    wed: { morning: false, afternoon: true, evening: true },
-    thu: { morning: true, afternoon: false, evening: true },
-    fri: { morning: true, afternoon: true, evening: true },
-    sat: { morning: false, afternoon: true, evening: true },
+    mon: { morning: false, afternoon: false, evening: false },
+    tue: { morning: false, afternoon: false, evening: false },
+    wed: { morning: false, afternoon: false, evening: false },
+    thu: { morning: false, afternoon: false, evening: false },
+    fri: { morning: false, afternoon: false, evening: false },
+    sat: { morning: false, afternoon: false, evening: false },
     sun: { morning: false, afternoon: false, evening: false },
   })
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+  const [membershipId, setMembershipId] = useState<string | null>(null)
+
+  // Load user and availability data
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setLoading(true)
+        setError(null)
+
+        // Get user info to find membershipId
+        const userRes = await fetch('/api/auth/me')
+        if (!userRes.ok) throw new Error('Failed to fetch user info')
+        
+        const userData = await userRes.json()
+        const activeMembership = userData.memberships?.find((m: any) => m.status === 'active')
+        
+        if (!activeMembership) {
+          throw new Error('No active membership found')
+        }
+
+        setMembershipId(activeMembership.id)
+
+        // Load availability
+        const availRes = await fetch(`/api/availability?membershipId=${activeMembership.id}`)
+        if (!availRes.ok) throw new Error('Failed to fetch availability')
+        
+        const availData = await availRes.json()
+        setAvailability(availData.availability)
+
+      } catch (err) {
+        console.error('Error loading availability:', err)
+        setError(err instanceof Error ? err.message : 'Failed to load availability')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadData()
+  }, [])
 
   const days = [
     { key: 'mon', label: 'Poniedziałek' },
@@ -62,9 +105,45 @@ export default function AvailabilityPage() {
     }))
   }
 
-  const handleSave = () => {
-    console.log('Zapisywanie dostępności:', availability)
-    alert('Dostępność zapisana!')
+  const handleSave = async () => {
+    if (!membershipId) {
+      setError('No membership found')
+      return
+    }
+
+    try {
+      setSaving(true)
+      setError(null)
+      setSuccess(null)
+
+      const response = await fetch('/api/availability', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          membershipId,
+          availability,
+        }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to save availability')
+      }
+
+      const data = await response.json()
+      setSuccess(`Dostępność zapisana! Utworzono ${data.recordsCreated} rekordów.`)
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccess(null), 3000)
+
+    } catch (err) {
+      console.error('Error saving availability:', err)
+      setError(err instanceof Error ? err.message : 'Failed to save availability')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const getTotalAvailableSlots = () => {
@@ -87,10 +166,48 @@ export default function AvailabilityPage() {
             </h1>
             <p className="text-gray-600">Zadeklaruj swoją dostępność do pracy</p>
           </div>
-          <Button variant="primary" onClick={handleSave}>
-            💾 Zapisz dostępność
+          <Button 
+            variant="primary" 
+            onClick={handleSave}
+            disabled={saving || loading}
+          >
+            {saving ? '💾 Zapisywanie...' : '💾 Zapisz dostępność'}
           </Button>
         </div>
+
+        {error && (
+          <Card variant="glass" className="border-2 border-red-300 bg-red-50/50">
+            <CardBody>
+              <div className="flex items-center gap-3 text-red-700">
+                <span className="text-2xl">❌</span>
+                <span className="font-semibold">{error}</span>
+              </div>
+            </CardBody>
+          </Card>
+        )}
+
+        {success && (
+          <Card variant="glass" className="border-2 border-green-300 bg-green-50/50">
+            <CardBody>
+              <div className="flex items-center gap-3 text-green-700">
+                <span className="text-2xl">✅</span>
+                <span className="font-semibold">{success}</span>
+              </div>
+            </CardBody>
+          </Card>
+        )}
+
+        {loading ? (
+          <Card variant="glass">
+            <CardBody className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="mb-4 text-6xl">⏳</div>
+                <div className="text-xl font-semibold text-gray-700">Ładowanie dostępności...</div>
+              </div>
+            </CardBody>
+          </Card>
+        ) : (
+          <>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <Card variant="gradient">
@@ -221,6 +338,8 @@ export default function AvailabilityPage() {
             </div>
           </CardBody>
         </Card>
+          </>
+        )}
       </div>
     </div>
   )

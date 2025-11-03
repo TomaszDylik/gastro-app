@@ -131,7 +131,7 @@ model TimeEntry {
   source            TimeEntrySource @default(manual)
   status            TimeEntryStatus @default(active)
   adjustmentMinutes Int      @default(0)
-  note              String?
+  reason            String?
 
   membership        Membership @relation(fields: [membershipId], references: [id])
   schedule          Schedule   @relation(fields: [scheduleId], references: [id])
@@ -208,7 +208,7 @@ model ReportDaily {
   totalsJson       Json     // snapshot stawek/kwot
   signedByUserId   String?
   signedAt         DateTime?
-  signatureLogJson Json[]   @default([])
+  signatureLogJson Json     // array stored as JSON
   
   restaurant       Restaurant @relation(fields: [restaurantId], references: [id])
   

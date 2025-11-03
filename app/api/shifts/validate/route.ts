@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { PrismaClient } from '@prisma/client'
-import { validateNoOverlap, type ShiftTimeSlot } from '@/lib/shift-overlap'
+import { checkShiftOverlap, validateShiftTimes } from '@/lib/shift-overlap-validation'
 
 const prisma = new PrismaClient()
 
@@ -12,6 +12,7 @@ export const dynamic = 'force-dynamic'
  * POST /api/shifts/validate
  * 
  * Validate that a shift doesn't overlap with existing shifts for the same employee.
+ * Checks across ALL schedules/categories for the member.
  * 
  * Request body:
  * {
@@ -24,12 +25,14 @@ export const dynamic = 'force-dynamic'
  * Response:
  * {
  *   valid: boolean,
- *   conflicts?: Array<{
- *     conflictingShiftId: string,
- *     overlapStart: string,
- *     overlapEnd: string,
- *     overlapMinutes: number
- *   }>
+ *   error?: string,
+ *   conflictingShift?: {
+ *     id: string,
+ *     scheduleId: string,
+ *     scheduleName: string,
+ *     start: string,
+ *     end: string
+ *   }
  * }
  */
 export async function POST(request: NextRequest) {
@@ -56,7 +59,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 3. Parse dates
+    // 3. Parse and validate dates
     const startDate = new Date(start)
     const endDate = new Date(end)
 
@@ -67,56 +70,36 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (startDate >= endDate) {
+    try {
+      validateShiftTimes(startDate, endDate)
+    } catch (error: any) {
       return NextResponse.json(
-        { error: 'Start time must be before end time' },
+        { error: error.message },
         { status: 400 }
       )
     }
 
-    // 4. Get existing shifts for this employee
-    // Find all shifts assigned to this membership
-    const existingAssignments = await prisma.shiftAssignment.findMany({
-      where: {
-        membershipId: membershipId,
-        status: {
-          in: ['assigned', 'completed']
-        }
-      },
-      include: {
-        shift: true
-      }
+    // 4. Check for overlapping shifts across ALL schedules
+    const result = await checkShiftOverlap({
+      membershipId,
+      newShiftStart: startDate,
+      newShiftEnd: endDate,
+      excludeShiftId: shiftId
     })
 
-    // Extract shifts as ShiftTimeSlot objects
-    const existingShifts: ShiftTimeSlot[] = existingAssignments.map(assignment => ({
-      id: assignment.shift.id,
-      start: assignment.shift.start,
-      end: assignment.shift.end,
-      membershipId: assignment.membershipId
-    }))
-
-    // 5. Validate overlap
-    const newShift: ShiftTimeSlot = {
-      id: shiftId,
-      start: startDate,
-      end: endDate,
-      membershipId: membershipId
-    }
-
-    const validationResult = validateNoOverlap(newShift, existingShifts)
-
-    // 6. Return result
-    if (validationResult.hasOverlap) {
+    // 5. Return validation result
+    if (result.hasOverlap) {
       return NextResponse.json({
         valid: false,
-        conflicts: validationResult.conflicts.map(conflict => ({
-          conflictingShiftId: conflict.conflictingShiftId,
-          overlapStart: conflict.overlapStart.toISOString(),
-          overlapEnd: conflict.overlapEnd.toISOString(),
-          overlapMinutes: conflict.overlapMinutes
-        }))
-      })
+        error: 'SHIFT_OVERLAP_FOR_MEMBER',
+        conflictingShift: {
+          id: result.conflictingShift!.id,
+          scheduleId: result.conflictingShift!.scheduleId,
+          scheduleName: result.conflictingShift!.scheduleName,
+          start: result.conflictingShift!.start.toISOString(),
+          end: result.conflictingShift!.end.toISOString()
+        }
+      }, { status: 409 })
     }
 
     return NextResponse.json({

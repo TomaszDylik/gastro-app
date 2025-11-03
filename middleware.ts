@@ -1,6 +1,9 @@
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
@@ -31,9 +34,71 @@ export async function middleware(req: NextRequest) {
 
   // Jeśli użytkownik JEST zalogowany i próbuje wejść na /login
   if (session && req.nextUrl.pathname === '/login') {
-    // Przekieruj na dashboard (może być domyślnie employee dashboard)
-    const redirectUrl = new URL('/dashboard', req.url)
-    return NextResponse.redirect(redirectUrl)
+    // Pobierz rolę użytkownika i przekieruj na odpowiedni dashboard
+    try {
+      const appUser = await prisma.appUser.findUnique({
+        where: { authUserId: session.user.id },
+        include: {
+          memberships: {
+            where: { status: 'active' },
+            include: { restaurant: true },
+          },
+        },
+      })
+
+      const role = appUser?.memberships[0]?.role || 'employee'
+      const restaurantId = appUser?.memberships[0]?.restaurantId
+
+      // Przekieruj na odpowiedni dashboard based on role
+      let dashboardUrl = '/dashboard' // default: employee
+      if (role === 'manager' && restaurantId) {
+        dashboardUrl = `/restaurant/${restaurantId}/dashboard`
+      } else if (role === 'super_admin') {
+        dashboardUrl = '/admin'
+      }
+
+      const redirectUrl = new URL(dashboardUrl, req.url)
+      return NextResponse.redirect(redirectUrl)
+    } catch (error) {
+      console.error('Error fetching user role:', error)
+      // Fallback to default dashboard
+      const redirectUrl = new URL('/dashboard', req.url)
+      return NextResponse.redirect(redirectUrl)
+    }
+  }
+
+  // Role-based access control
+  if (session && !isApiRoute && !isPublicPath) {
+    try {
+      const appUser = await prisma.appUser.findUnique({
+        where: { authUserId: session.user.id },
+        include: {
+          memberships: {
+            where: { status: 'active' },
+            include: { restaurant: true },
+          },
+        },
+      })
+
+      const role = appUser?.memberships[0]?.role || 'employee'
+      const pathname = req.nextUrl.pathname
+
+      // Check if user is trying to access a route they shouldn't
+      const isManagerRoute = pathname.startsWith('/manager') || pathname.includes('/restaurant/')
+      const isOwnerRoute = pathname.startsWith('/owner')
+      const isAdminRoute = pathname.startsWith('/admin')
+
+      // Employee routes are in (employee) group, accessible by all
+      // But restrict access to manager/owner/admin routes
+      if (isManagerRoute && role === 'employee') {
+        return NextResponse.redirect(new URL('/dashboard', req.url))
+      }
+      if (isAdminRoute && role !== 'super_admin') {
+        return NextResponse.redirect(new URL('/dashboard', req.url))
+      }
+    } catch (error) {
+      console.error('Error checking user permissions:', error)
+    }
   }
 
   return res

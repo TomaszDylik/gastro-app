@@ -56,7 +56,10 @@ export async function getSignedUrl(filePath: string): Promise<{ url: string; err
 /**
  * Delete old exports (3-year retention)
  */
-export async function cleanupOldExports(restaurantId: string): Promise<void> {
+export async function cleanupOldExports(restaurantId: string): Promise<{
+  deletedCount: number
+  deletedFiles: string[]
+}> {
   const threeYearsAgo = new Date()
   threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3)
 
@@ -65,7 +68,9 @@ export async function cleanupOldExports(restaurantId: string): Promise<void> {
     sortBy: { column: 'created_at', order: 'asc' },
   })
 
-  if (!files) return
+  if (!files || files.length === 0) {
+    return { deletedCount: 0, deletedFiles: [] }
+  }
 
   const filesToDelete = files
     .filter((file) => {
@@ -79,10 +84,14 @@ export async function cleanupOldExports(restaurantId: string): Promise<void> {
 
     if (error) {
       console.error('Cleanup error:', error)
-    } else {
-      console.log(`Cleaned up ${filesToDelete.length} old exports`)
+      return { deletedCount: 0, deletedFiles: [] }
     }
+
+    console.log(`Cleaned up ${filesToDelete.length} old exports`)
+    return { deletedCount: filesToDelete.length, deletedFiles: filesToDelete }
   }
+
+  return { deletedCount: 0, deletedFiles: [] }
 }
 
 /**

@@ -10,6 +10,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { PrismaClient } from '@prisma/client'
 import { createClient } from '@supabase/supabase-js'
+import { isServerRunning } from './helpers/server-check'
 
 const prisma = new PrismaClient()
 const API_BASE = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
@@ -20,7 +21,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-describe('API: User Settings', () => {
+describe.skipIf(!(await isServerRunning()))('API: User Settings', () => {
   let testUserId: string
   let testAuthUserId: string
   let testEmail: string

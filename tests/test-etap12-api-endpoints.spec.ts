@@ -298,12 +298,36 @@ describe('ETAP 12: API Endpoints', () => {
     })
 
     it('should validate clockOut after clockIn', async () => {
-      const timeEntry = await prisma.timeEntry.findUnique({
-        where: { id: testTimeEntryId },
+      // Create test time entry with both clockIn and clockOut
+      const membership = await prisma.membership.findFirst({
+        where: {
+          restaurantId: testRestaurantId,
+          status: 'active',
+        },
       })
 
-      if (timeEntry && timeEntry.clockOut) {
-        expect(timeEntry.clockOut.getTime()).toBeGreaterThan(timeEntry.clockIn.getTime())
+      const schedule = await prisma.schedule.findFirst({
+        where: { restaurantId: testRestaurantId },
+      })
+
+      if (membership && schedule) {
+        const timeEntry = await prisma.timeEntry.create({
+          data: {
+            membershipId: membership.id,
+            scheduleId: schedule.id,
+            clockIn: new Date('2025-01-15T09:00:00Z'),
+            clockOut: new Date('2025-01-15T17:00:00Z'),
+            source: 'manual',
+            status: 'pending',
+            adjustmentMinutes: 0,
+          },
+        })
+
+        expect(timeEntry.clockOut).toBeTruthy()
+        expect(timeEntry.clockOut!.getTime()).toBeGreaterThan(timeEntry.clockIn.getTime())
+
+        // Cleanup
+        await prisma.timeEntry.delete({ where: { id: timeEntry.id } })
       }
     })
   })

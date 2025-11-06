@@ -5,6 +5,7 @@ import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { showToast } from '@/lib/toast'
 
 interface UserData {
   id: string
@@ -28,7 +29,6 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
   
   const [userData, setUserData] = useState<UserData | null>(null)
   const [preferences, setPreferences] = useState<Preferences>({
@@ -82,7 +82,6 @@ export default function SettingsPage() {
     try {
       setSaving(true)
       setError(null)
-      setSuccess(null)
 
       const res = await fetch('/api/users/me', {
         method: 'PATCH',
@@ -98,10 +97,12 @@ export default function SettingsPage() {
         throw new Error(data.error || 'Failed to save profile')
       }
 
-      setSuccess('Profil zapisany pomyślnie! ✅')
+      showToast.success('Profil zapisany', 'Twoje dane zostały zaktualizowane')
       await loadUserData()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      const message = err instanceof Error ? err.message : 'Unknown error'
+      setError(message)
+      showToast.error('Błąd zapisu profilu', message)
     } finally {
       setSaving(false)
     }
@@ -111,7 +112,6 @@ export default function SettingsPage() {
     try {
       setSaving(true)
       setError(null)
-      setSuccess(null)
 
       const res = await fetch('/api/users/me/preferences', {
         method: 'PUT',
@@ -124,9 +124,11 @@ export default function SettingsPage() {
         throw new Error(data.error || 'Failed to save preferences')
       }
 
-      setSuccess('Preferencje zapisane pomyślnie! ✅')
+      showToast.success('Preferencje zapisane', 'Ustawienia zostały zaktualizowane')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      const message = err instanceof Error ? err.message : 'Unknown error'
+      setError(message)
+      showToast.error('Błąd zapisu preferencji', message)
     } finally {
       setSaving(false)
     }
@@ -135,20 +137,25 @@ export default function SettingsPage() {
   const handleChangePassword = async () => {
     try {
       setError(null)
-      setSuccess(null)
 
       if (!passwords.current || !passwords.new || !passwords.confirm) {
-        setError('Wszystkie pola hasła są wymagane')
+        const message = 'Wszystkie pola hasła są wymagane'
+        setError(message)
+        showToast.warning('Sprawdź formularz', message)
         return
       }
 
       if (passwords.new !== passwords.confirm) {
-        setError('Nowe hasła nie są identyczne!')
+        const message = 'Nowe hasła nie są identyczne!'
+        setError(message)
+        showToast.warning('Sprawdź formularz', message)
         return
       }
 
       if (passwords.new.length < 8) {
-        setError('Nowe hasło musi mieć min. 8 znaków')
+        const message = 'Nowe hasło musi mieć min. 8 znaków'
+        setError(message)
+        showToast.warning('Sprawdź formularz', message)
         return
       }
 
@@ -168,10 +175,12 @@ export default function SettingsPage() {
         throw new Error(data.error || 'Failed to change password')
       }
 
-      setSuccess('Hasło zmienione pomyślnie! ✅')
+      showToast.success('Hasło zmienione', 'Nowe hasło zostało ustawione')
       setPasswords({ current: '', new: '', confirm: '' })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      const message = err instanceof Error ? err.message : 'Unknown error'
+      setError(message)
+      showToast.error('Błąd zmiany hasła', message)
     } finally {
       setSaving(false)
     }
@@ -225,17 +234,6 @@ export default function SettingsPage() {
               <div className="flex items-center gap-3 text-red-700">
                 <span className="text-2xl">❌</span>
                 <span className="font-semibold">{error}</span>
-              </div>
-            </CardBody>
-          </Card>
-        )}
-
-        {success && (
-          <Card variant="glass" className="border-2 border-green-300 bg-green-50/50">
-            <CardBody>
-              <div className="flex items-center gap-3 text-green-700">
-                <span className="text-2xl">✅</span>
-                <span className="font-semibold">{success}</span>
               </div>
             </CardBody>
           </Card>

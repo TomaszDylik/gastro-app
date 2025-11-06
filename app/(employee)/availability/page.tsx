@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { showToast } from '@/lib/toast'
 
 type TimeSlot = 'morning' | 'afternoon' | 'evening'
 type DayOfWeek = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
@@ -27,7 +28,6 @@ export default function AvailabilityPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
   const [membershipId, setMembershipId] = useState<string | null>(null)
 
   // Load user and availability data
@@ -107,14 +107,15 @@ export default function AvailabilityPage() {
 
   const handleSave = async () => {
     if (!membershipId) {
-      setError('No membership found')
+      const message = 'No membership found'
+      setError(message)
+      showToast.error('Błąd', message)
       return
     }
 
     try {
       setSaving(true)
       setError(null)
-      setSuccess(null)
 
       const response = await fetch('/api/availability', {
         method: 'PUT',
@@ -133,14 +134,16 @@ export default function AvailabilityPage() {
       }
 
       const data = await response.json()
-      setSuccess(`Dostępność zapisana! Utworzono ${data.recordsCreated} rekordów.`)
-      
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccess(null), 3000)
+      showToast.success(
+        'Dostępność zapisana!', 
+        `Utworzono ${data.recordsCreated} rekordów dostępności`
+      )
 
     } catch (err) {
       console.error('Error saving availability:', err)
-      setError(err instanceof Error ? err.message : 'Failed to save availability')
+      const message = err instanceof Error ? err.message : 'Failed to save availability'
+      setError(message)
+      showToast.error('Błąd zapisu', message)
     } finally {
       setSaving(false)
     }
@@ -181,17 +184,6 @@ export default function AvailabilityPage() {
               <div className="flex items-center gap-3 text-red-700">
                 <span className="text-2xl">❌</span>
                 <span className="font-semibold">{error}</span>
-              </div>
-            </CardBody>
-          </Card>
-        )}
-
-        {success && (
-          <Card variant="glass" className="border-2 border-green-300 bg-green-50/50">
-            <CardBody>
-              <div className="flex items-center gap-3 text-green-700">
-                <span className="text-2xl">✅</span>
-                <span className="font-semibold">{success}</span>
               </div>
             </CardBody>
           </Card>

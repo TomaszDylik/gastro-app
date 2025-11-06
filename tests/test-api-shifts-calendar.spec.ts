@@ -10,11 +10,12 @@
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { PrismaClient } from '@prisma/client'
+import { isServerRunning } from './helpers/server-check'
 
 const prisma = new PrismaClient()
 const API_BASE = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
-describe('API: GET /api/shifts', () => {
+describe.skipIf(!(await isServerRunning()))('API: GET /api/shifts', () => {
   let testUserId: string
   let testRestaurantId: string
   let testMembershipId: string

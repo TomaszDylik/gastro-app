@@ -96,6 +96,20 @@ export function ProfileMenu({ user }: ProfileMenuProps) {
     }
   }
 
+  const getSettingsPath = () => {
+    // Settings path depends on role
+    if (user.role === 'employee') {
+      return '/employee/settings'
+    }
+    if (user.role === 'manager') {
+      return '/manager/settings' // Note: Manager settings may need restaurantId in future
+    }
+    if (user.role === 'super_admin') {
+      return '/admin/settings'
+    }
+    return '/employee/settings' // Fallback
+  }
+
   return (
     <div className="relative" ref={menuRef}>
       {/* Trigger Button */}
@@ -173,7 +187,7 @@ export function ProfileMenu({ user }: ProfileMenuProps) {
           {/* Menu Items */}
           <div className="p-2">
             <Link
-              href="/settings"
+              href={getSettingsPath() as any}
               onClick={() => setIsOpen(false)}
               className={cn(
                 'flex items-center gap-3 px-3 py-2.5 rounded-lg',

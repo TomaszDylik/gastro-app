@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { redirectByRole } from '@/lib/redirect-by-role'
+import Link from 'next/link'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -184,6 +185,15 @@ export default function LoginPage() {
             >
               {loading ? 'Logowanie...' : 'Zaloguj się'}
             </button>
+
+            <div className="text-center">
+              <Link
+                href="/forgot-password"
+                className="text-sm text-blue-600 hover:underline"
+              >
+                Zapomniałeś hasła?
+              </Link>
+            </div>
           </form>
         )}
 

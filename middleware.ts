@@ -31,9 +31,9 @@ export async function middleware(req: NextRequest) {
 
   // Jeśli użytkownik JEST zalogowany i próbuje wejść na /login
   if (session && req.nextUrl.pathname === '/login') {
-    // Przekieruj na dashboard (domyślnie employee)
-    // Role-based routing będzie obsługiwane przez API /api/auth/me
-    const redirectUrl = new URL('/dashboard', req.url)
+    // Przekieruj na główną stronę (/) która sama zrobi redirect na podstawie roli
+    // Nie możemy tu sprawdzać roli bo middleware działa w Edge Runtime (brak Prisma)
+    const redirectUrl = new URL('/', req.url)
     return NextResponse.redirect(redirectUrl)
   }
 

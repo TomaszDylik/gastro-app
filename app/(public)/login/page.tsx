@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import { redirectByRole } from '@/lib/redirect-by-role'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -31,9 +32,9 @@ export default function LoginPage() {
 
       console.log('✅ Login successful, user:', data.user.email)
 
-      // Bezpośrednie przekierowanie - session jest już zapisana przez Supabase
-      // Używamy router.push bo session jest już w cookies
-      router.push('/dashboard')
+      // Przekierowanie na podstawie roli użytkownika
+      const redirectPath = await redirectByRole()
+      router.push(redirectPath)
       router.refresh()
     } catch (error: any) {
       console.error('❌ Login error:', error)

@@ -61,15 +61,21 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
     }
 
-    return NextResponse.json({
-      restaurant: {
-        id: restaurant.id,
-        name: restaurant.name,
-        timezone: restaurant.timezone,
-        settings: restaurant.settings,
-        userRole: membership.role,
-      },
-    })
+    // 5. Prepare response (include inviteToken only for managers)
+    const response: any = {
+      id: restaurant.id,
+      name: restaurant.name,
+      timezone: restaurant.timezone,
+      settings: restaurant.settings,
+      userRole: membership.role,
+    }
+
+    // Only managers can see the invite token
+    if (membership.role === 'manager' || membership.role === 'owner') {
+      response.inviteToken = restaurant.inviteToken
+    }
+
+    return NextResponse.json(response)
   } catch (error) {
     console.error('Error fetching restaurant:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

@@ -33,16 +33,16 @@ export async function redirectByRole() {
         return '/owner/dashboard'
       }
       if (roles.includes('manager')) {
-        return '/manager/dashboard'
+        return '/manager'
       }
       // Default: employee
-      return '/dashboard'
+      return '/employee/dashboard'
     }
 
-    // Fallback: jeśli brak memberships, idź na dashboard
-    return '/dashboard'
+    // Fallback: jeśli brak memberships, idź na employee dashboard
+    return '/employee/dashboard'
   } catch (error) {
     console.error('Error in redirectByRole:', error)
-    return '/dashboard' // Fallback
+    return '/employee/dashboard' // Fallback
   }
 }

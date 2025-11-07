@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react'
 import { useEffect, useState } from 'react'
+import { useParams } from 'next/navigation'
 import { Sidebar } from '@/components/navigation/Sidebar'
 import { MobileBottomNav } from '@/components/navigation/MobileBottomNav'
 import { ProfileMenu } from '@/components/navigation/ProfileMenu'
@@ -18,6 +19,8 @@ interface UserData {
 }
 
 export default function ManagerLayout({ children }: { children: ReactNode }) {
+  const params = useParams()
+  const restaurantId = params.restaurantId as string
   const [user, setUser] = useState<UserData | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -65,7 +68,7 @@ export default function ManagerLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Sidebar - Desktop */}
-      <Sidebar userRole={user.role} restaurantId={user.restaurantId} />
+      <Sidebar userRole={user.role} restaurantId={restaurantId} />
 
       {/* Main Content Area */}
       <div className="lg:pl-64">
@@ -96,7 +99,7 @@ export default function ManagerLayout({ children }: { children: ReactNode }) {
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <MobileBottomNav userRole={user.role} restaurantId={user.restaurantId} />
+      <MobileBottomNav userRole={user.role} restaurantId={restaurantId} />
     </div>
   )
 }

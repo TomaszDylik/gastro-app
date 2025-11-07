@@ -12,7 +12,7 @@ export async function middleware(req: NextRequest) {
   } = await supabase.auth.getSession()
 
   // Publiczne ścieżki (dostępne bez logowania)
-  const publicPaths = ['/login', '/auth/callback', '/invite']
+  const publicPaths = ['/login', '/auth/callback', '/invite', '/forgot-password', '/reset-password']
   const isPublicPath = publicPaths.some((path) => req.nextUrl.pathname.startsWith(path))
 
   // API routes - nie przekierowuj, zwróć 401

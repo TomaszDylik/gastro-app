@@ -29,15 +29,15 @@ export function MobileBottomNav({ userRole, restaurantId }: MobileBottomNavProps
   const pathname = usePathname()
 
   const getNavItems = (): NavItem[] => {
-    const baseRestaurantPath = restaurantId ? `/restaurant/${restaurantId}` : '/manager'
+    const baseRestaurantPath = restaurantId ? `/manager/${restaurantId}` : '/manager'
 
     if (userRole === 'employee') {
       return [
-        { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-        { label: 'Podsumowanie', href: '/summary', icon: FileText },
-        { label: 'Kalendarz', href: '/calendar', icon: Calendar },
-        { label: 'Dostępność', href: '/availability', icon: CheckSquare },
-        { label: 'Ustawienia', href: '/settings', icon: Settings },
+        { label: 'Dashboard', href: '/employee/dashboard', icon: LayoutDashboard },
+        { label: 'Podsumowanie', href: '/employee/summary', icon: FileText },
+        { label: 'Kalendarz', href: '/employee/calendar', icon: Calendar },
+        { label: 'Dostępność', href: '/employee/availability', icon: CheckSquare },
+        { label: 'Ustawienia', href: '/employee/settings', icon: Settings },
       ]
     }
 
@@ -65,7 +65,7 @@ export function MobileBottomNav({ userRole, restaurantId }: MobileBottomNavProps
   const navItems = getNavItems()
 
   const isActive = (href: string) => {
-    if (href === '/dashboard' || href.endsWith('/dashboard')) {
+    if (href === '/employee/dashboard' || href.endsWith('/dashboard')) {
       return pathname === href
     }
     return pathname.startsWith(href)

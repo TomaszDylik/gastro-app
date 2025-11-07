@@ -32,8 +32,8 @@ export default async function HomePage() {
     })
 
     if (!user || !user.memberships || user.memberships.length === 0) {
-      // Brak memberships - przekieruj na stronę onboardingu lub dashboard
-      redirect('/dashboard')
+      // Brak memberships - przekieruj na employee dashboard
+      redirect('/employee/dashboard')
     }
 
     // Sprawdź najwyższą rolę
@@ -47,14 +47,14 @@ export default async function HomePage() {
       redirect('/owner/dashboard')
     }
     if (roles.includes('manager')) {
-      redirect('/manager/dashboard')
+      redirect('/manager')
     }
 
     // Default: employee
-    redirect('/dashboard')
+    redirect('/employee/dashboard')
   } catch (error) {
     console.error('Error checking user role:', error)
-    redirect('/dashboard')
+    redirect('/employee/dashboard')
   } finally {
     await prisma.$disconnect()
   }

@@ -67,6 +67,8 @@ export function Breadcrumbs({ customItems, userRole = 'employee' }: BreadcrumbsP
     // Common route labels
     const labels: Record<string, string> = {
       'dashboard': 'Dashboard',
+      'employee': 'Pracownik',
+      'manager': 'Menedżer',
       'summary': 'Podsumowanie',
       'calendar': 'Kalendarz',
       'availability': 'Dostępność',
@@ -76,7 +78,6 @@ export function Breadcrumbs({ customItems, userRole = 'employee' }: BreadcrumbsP
       'time': 'Czas pracy',
       'reports': 'Raporty',
       'restaurant': 'Restauracja',
-      'manager': 'Manager',
       'admin': 'Administrator',
       'users': 'Użytkownicy',
       'restaurants': 'Restauracje',
@@ -109,10 +110,24 @@ export function Breadcrumbs({ customItems, userRole = 'employee' }: BreadcrumbsP
     }
   }
 
+  // Get role-specific home href
+  const getHomeHref = () => {
+    switch (userRole) {
+      case 'employee':
+        return '/employee/dashboard'
+      case 'manager':
+        return '/manager'
+      case 'super_admin':
+        return '/admin'
+      default:
+        return '/employee/dashboard'
+    }
+  }
+
   return (
     <nav className="flex items-center space-x-2 text-sm py-2">
       <Link
-        href="/dashboard"
+        href={getHomeHref()}
         className={cn('transition-colors', getRoleColor())}
         title="Dashboard"
       >

@@ -59,7 +59,7 @@ export default function ManagerDashboard() {
       const user = await res.json()
       
       if (user.role !== 'manager') {
-        if (user.role === 'employee') router.push('/dashboard')
+        if (user.role === 'employee') router.push('/employee/dashboard')
         else if (user.role === 'owner') router.push('/owner/dashboard')
         else if (user.role === 'admin') router.push('/admin')
         return

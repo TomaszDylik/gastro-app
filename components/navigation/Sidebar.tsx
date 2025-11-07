@@ -38,15 +38,15 @@ export function Sidebar({ userRole, restaurantId }: SidebarProps) {
 
   // Define menu items based on role
   const getMenuItems = (): MenuItem[] => {
-    const baseRestaurantPath = restaurantId ? `/restaurant/${restaurantId}` : '/manager'
+    const baseRestaurantPath = restaurantId ? `/manager/${restaurantId}` : '/manager'
 
     if (userRole === 'employee') {
       return [
-        { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['employee'] },
-        { label: 'Podsumowanie', href: '/summary', icon: FileText, roles: ['employee'] },
-        { label: 'Kalendarz', href: '/calendar', icon: Calendar, roles: ['employee'] },
-        { label: 'Dostępność', href: '/availability', icon: CheckSquare, roles: ['employee'] },
-        { label: 'Ustawienia', href: '/settings', icon: Settings, roles: ['employee'] },
+        { label: 'Dashboard', href: '/employee/dashboard', icon: LayoutDashboard, roles: ['employee'] },
+        { label: 'Podsumowanie', href: '/employee/summary', icon: FileText, roles: ['employee'] },
+        { label: 'Kalendarz', href: '/employee/calendar', icon: Calendar, roles: ['employee'] },
+        { label: 'Dostępność', href: '/employee/availability', icon: CheckSquare, roles: ['employee'] },
+        { label: 'Ustawienia', href: '/employee/settings', icon: Settings, roles: ['employee'] },
       ]
     }
 
@@ -56,7 +56,7 @@ export function Sidebar({ userRole, restaurantId }: SidebarProps) {
         { label: 'Czas pracy', href: `${baseRestaurantPath}/time`, icon: Clock, roles: ['manager'] },
         { label: 'Zespół', href: `${baseRestaurantPath}/team`, icon: Users, roles: ['manager'] },
         { label: 'Harmonogramy', href: `${baseRestaurantPath}/schedules`, icon: Calendar, roles: ['manager'] },
-        { label: 'Ustawienia', href: '/settings', icon: Settings, roles: ['manager'] },
+        { label: 'Ustawienia', href: `${baseRestaurantPath}/settings`, icon: Settings, roles: ['manager'] },
       ]
     }
 
@@ -76,7 +76,7 @@ export function Sidebar({ userRole, restaurantId }: SidebarProps) {
 
   const isActive = (href: string) => {
     // Exact match for dashboard
-    if (href === '/dashboard' || href.endsWith('/dashboard')) {
+    if (href === '/employee/dashboard' || href.endsWith('/dashboard')) {
       return pathname === href
     }
     // Starts with for other routes

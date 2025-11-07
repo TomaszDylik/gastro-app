@@ -33,10 +33,12 @@ model Restaurant {
   companyId   String?
   name        String
   timezone    String
+  inviteToken String?     @unique  // Token for employees to join restaurant
   settings    RestaurantSettings?
   memberships Membership[]
   schedules   Schedule[]
   invites     Invite[]
+  inviteLogs  InviteLog[]
   auditLogs   AuditLog[]
   dailyReportSignatures DailyReportSignature[]
   reportsDaily   ReportDaily[]
@@ -176,6 +178,23 @@ model Invite {
   @@index([token])
   @@index([email])
   @@index([restaurantId])
+}
+
+model InviteLog {
+  id            String   @id @default(cuid())
+  restaurantId  String
+  userId        String
+  action        InviteLogAction
+  token         String?
+  ipAddress     String?
+  userAgent     String?
+  createdAt     DateTime @default(now())
+
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
+
+  @@index([restaurantId])
+  @@index([userId])
+  @@index([createdAt])
 }
 
 model AuditLog {
@@ -323,4 +342,12 @@ enum FileKind {
   csv
   xlsx
   pdf
+}
+
+enum InviteLogAction {
+  token_generated
+  token_used
+  join_requested
+  join_approved
+  join_rejected
 }

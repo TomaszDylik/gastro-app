@@ -40,6 +40,7 @@ model Restaurant {
   invites     Invite[]
   inviteLogs  InviteLog[]
   auditLogs   AuditLog[]
+  departments Department[]
   dailyReportSignatures DailyReportSignature[]
   reportsDaily   ReportDaily[]
   reportsWeekly  ReportWeekly[]
@@ -54,18 +55,21 @@ model Membership {
   userId              String
   restaurantId        String
   role                Role
+  departmentId        String?    // Optional department assignment
   hourlyRateManagerPLN Decimal?  @db.Decimal(10,2)  // Rate when working as manager (replaces hourlyRateEmployee/Manager)
   status              Status     @default(pending)
   createdAt           DateTime   @default(now())
 
   user                AppUser    @relation(fields: [userId], references: [id])
   restaurant          Restaurant @relation(fields: [restaurantId], references: [id])
+  department          Department? @relation(fields: [departmentId], references: [id])
   availabilities      Availability[]
   timeEntries         TimeEntry[]
   shiftAssignments    ShiftAssignment[]
   payrollMonthly      PayrollMonthly[]
 
   @@index([restaurantId, role])
+  @@index([departmentId])
 }
 
 model Schedule {
@@ -98,17 +102,20 @@ model Availability {
 }
 
 model Shift {
-  id         String   @id @default(cuid())
-  scheduleId String
-  start      DateTime
-  end        DateTime
-  roleTag    String?
-  notes      String?
+  id           String   @id @default(cuid())
+  scheduleId   String
+  start        DateTime
+  end          DateTime
+  departmentId String?  // Optional department for this shift
+  roleTag      String?  // Deprecated - will migrate to departmentId
+  notes        String?
 
-  schedule   Schedule @relation(fields: [scheduleId], references: [id])
-  assignments ShiftAssignment[]
+  schedule     Schedule @relation(fields: [scheduleId], references: [id])
+  department   Department? @relation(fields: [departmentId], references: [id])
+  assignments  ShiftAssignment[]
 
   @@index([scheduleId, start])
+  @@index([departmentId])
 }
 
 model ShiftAssignment {
@@ -195,6 +202,24 @@ model InviteLog {
   @@index([restaurantId])
   @@index([userId])
   @@index([createdAt])
+}
+
+model Department {
+  id           String   @id @default(cuid())
+  restaurantId String
+  name         String   // e.g., "Kuchnia", "Bar", "Sala"
+  roleTag      String   // e.g., "cook", "bartender", "waiter"
+  color        String   @default("#3B82F6") // Hex color for UI display
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  memberships  Membership[]
+  shifts       Shift[]
+
+  @@unique([restaurantId, roleTag])
+  @@index([restaurantId])
 }
 
 model AuditLog {

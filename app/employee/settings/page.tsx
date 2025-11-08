@@ -48,6 +48,10 @@ export default function SettingsPage() {
     confirm: ''
   })
 
+  const [joinToken, setJoinToken] = useState('')
+  const [joining, setJoining] = useState(false)
+  const [joinSuccess, setJoinSuccess] = useState(false)
+
   useEffect(() => {
     loadUserData()
   }, [])
@@ -204,6 +208,41 @@ export default function SettingsPage() {
       })
     } catch (err) {
       console.error('Failed to save notification preference:', err)
+    }
+  }
+
+  const handleJoinRestaurant = async () => {
+    if (!joinToken.trim()) {
+      showToast.error('Wprowadź kod', 'Wpisz kod zaproszenia otrzymany od menedżera')
+      return
+    }
+
+    try {
+      setJoining(true)
+      const res = await fetch('/api/employee/join-restaurant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: joinToken.trim() }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Nie udało się dołączyć do restauracji')
+      }
+
+      showToast.success('Dołączono do restauracji', `Witaj w zespole: ${data.restaurantName}`)
+      setJoinToken('')
+      setJoinSuccess(true)
+      
+      // Przekieruj na dashboard po 2 sekundach
+      setTimeout(() => {
+        window.location.href = '/employee/dashboard'
+      }, 2000)
+    } catch (err) {
+      showToast.error('Błąd dołączania', err instanceof Error ? err.message : 'Sprawdź kod i spróbuj ponownie')
+    } finally {
+      setJoining(false)
     }
   }
 
@@ -377,7 +416,64 @@ export default function SettingsPage() {
 
         <Card variant="glass">
           <CardHeader>
-            <h2 className="text-2xl font-bold">🌍 Język i region</h2>
+            <h2 className="text-2xl font-bold">� Dołącz do restauracji</h2>
+          </CardHeader>
+          <CardBody>
+            {joinSuccess ? (
+              <div className="text-center py-8">
+                <div className="text-6xl mb-4">🎉</div>
+                <div className="text-2xl font-bold text-green-600 mb-2">Sukces!</div>
+                <div className="text-gray-600">Za chwilę przekierujemy Cię na dashboard...</div>
+              </div>
+            ) : (
+              <>
+                <div className="mb-6 rounded-xl bg-blue-50 border border-blue-200 p-4">
+                  <div className="flex gap-3">
+                    <div className="text-2xl">💡</div>
+                    <div className="flex-1 text-sm text-gray-700">
+                      <p className="font-semibold mb-2">Jak dołączyć do zespołu?</p>
+                      <ol className="list-decimal list-inside space-y-1">
+                        <li>Poproś menedżera o kod zaproszenia (8 znaków)</li>
+                        <li>Wpisz kod w polu poniżej</li>
+                        <li>Kliknij "Dołącz do restauracji"</li>
+                        <li>Gotowe! Będziesz mógł zarządzać swoimi zmianami</li>
+                      </ol>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <Input
+                    label="Kod zaproszenia"
+                    placeholder="np. ABC123XY"
+                    value={joinToken}
+                    onChange={(e) => setJoinToken(e.target.value.toUpperCase())}
+                    maxLength={8}
+                    disabled={joining}
+                  />
+                  
+                  <div className="flex justify-end">
+                    <Button 
+                      variant="primary" 
+                      onClick={handleJoinRestaurant}
+                      disabled={joining || !joinToken.trim()}
+                    >
+                      {joining ? '🔄 Dołączanie...' : '🚀 Dołącz do restauracji'}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="mt-4 text-sm text-gray-500 text-center">
+                  Po dołączeniu zostaniesz przekierowany na swój dashboard
+                </div>
+              </>
+            )}
+          </CardBody>
+        </Card>
+
+        <Card variant="glass">
+          <CardHeader>
+            <h2 className="text-2xl font-bold">�🌍 Język i region</h2>
           </CardHeader>
           <CardBody>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

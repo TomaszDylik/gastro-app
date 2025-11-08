@@ -2,12 +2,30 @@
 
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
-import { Copy, RefreshCw, CheckCircle, AlertCircle } from 'lucide-react'
+import { Copy, RefreshCw, CheckCircle, AlertCircle, Plus, Edit2, Trash2, X, Save } from 'lucide-react'
 
 interface Restaurant {
   id: string
   name: string
   inviteToken: string | null
+}
+
+interface Department {
+  id: string
+  name: string
+  roleTag: string
+  color: string
+  isActive: boolean
+  _count?: {
+    memberships: number
+    shifts: number
+  }
+}
+
+interface DepartmentForm {
+  name: string
+  roleTag: string
+  color: string
 }
 
 export default function SettingsPage() {
@@ -20,8 +38,21 @@ export default function SettingsPage() {
   const [copySuccess, setCopySuccess] = useState(false)
   const [error, setError] = useState('')
 
+  // Departments state
+  const [departments, setDepartments] = useState<Department[]>([])
+  const [departmentsLoading, setDepartmentsLoading] = useState(true)
+  const [showDepartmentForm, setShowDepartmentForm] = useState(false)
+  const [editingDepartment, setEditingDepartment] = useState<Department | null>(null)
+  const [departmentForm, setDepartmentForm] = useState<DepartmentForm>({
+    name: '',
+    roleTag: '',
+    color: '#3B82F6',
+  })
+  const [savingDepartment, setSavingDepartment] = useState(false)
+
   useEffect(() => {
     loadRestaurant()
+    loadDepartments()
   }, [restaurantId])
 
   const loadRestaurant = async () => {
@@ -68,6 +99,144 @@ export default function SettingsPage() {
       setTimeout(() => setCopySuccess(false), 2000)
     } catch (err) {
       setError('Nie udało się skopiować tokenu')
+    }
+  }
+
+  // Departments functions
+  const loadDepartments = async () => {
+    try {
+      setDepartmentsLoading(true)
+      const res = await fetch(`/api/manager/${restaurantId}/departments`)
+      if (!res.ok) throw new Error('Failed to load departments')
+      const data = await res.json()
+      setDepartments(data.departments || [])
+    } catch (err) {
+      console.error('Failed to load departments:', err)
+    } finally {
+      setDepartmentsLoading(false)
+    }
+  }
+
+  const openDepartmentForm = (department?: Department) => {
+    if (department) {
+      setEditingDepartment(department)
+      setDepartmentForm({
+        name: department.name,
+        roleTag: department.roleTag,
+        color: department.color,
+      })
+    } else {
+      setEditingDepartment(null)
+      setDepartmentForm({
+        name: '',
+        roleTag: '',
+        color: '#3B82F6',
+      })
+    }
+    setShowDepartmentForm(true)
+    setError('')
+  }
+
+  const closeDepartmentForm = () => {
+    setShowDepartmentForm(false)
+    setEditingDepartment(null)
+    setDepartmentForm({ name: '', roleTag: '', color: '#3B82F6' })
+    setError('')
+  }
+
+  const saveDepartment = async () => {
+    if (!departmentForm.name.trim() || !departmentForm.roleTag.trim()) {
+      setError('Nazwa i tag roli są wymagane')
+      return
+    }
+
+    setSavingDepartment(true)
+    setError('')
+
+    try {
+      if (editingDepartment) {
+        // Update existing department
+        const res = await fetch(`/api/departments/${editingDepartment.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(departmentForm),
+        })
+
+        if (!res.ok) {
+          const data = await res.json()
+          throw new Error(data.error || 'Failed to update department')
+        }
+      } else {
+        // Create new department
+        const res = await fetch(`/api/manager/${restaurantId}/departments`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(departmentForm),
+        })
+
+        if (!res.ok) {
+          const data = await res.json()
+          throw new Error(data.error || 'Failed to create department')
+        }
+      }
+
+      await loadDepartments()
+      closeDepartmentForm()
+    } catch (err: any) {
+      setError(err.message || 'Nie udało się zapisać działu')
+    } finally {
+      setSavingDepartment(false)
+    }
+  }
+
+  const toggleDepartmentActive = async (department: Department) => {
+    try {
+      const res = await fetch(`/api/departments/${department.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: !department.isActive }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to update department')
+      }
+
+      await loadDepartments()
+    } catch (err: any) {
+      setError(err.message || 'Nie udało się zaktualizować działu')
+    }
+  }
+
+  const deleteDepartment = async (department: Department) => {
+    const hasAssignments = (department._count?.memberships || 0) > 0 || (department._count?.shifts || 0) > 0
+
+    if (hasAssignments) {
+      const confirmed = confirm(
+        `Dział "${department.name}" ma przypisanych ${department._count?.memberships || 0} pracowników i ${department._count?.shifts || 0} zmian. Chcesz go dezaktywować?`
+      )
+      if (confirmed) {
+        await toggleDepartmentActive(department)
+      }
+      return
+    }
+
+    const confirmed = confirm(`Czy na pewno chcesz usunąć dział "${department.name}"?`)
+    if (!confirmed) return
+
+    try {
+      const res = await fetch(`/api/departments/${department.id}?hard=true`, {
+        method: 'DELETE',
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to delete department')
+      }
+
+      await loadDepartments()
+    } catch (err: any) {
+      setError(err.message || 'Nie udało się usunąć działu')
     }
   }
 
@@ -166,6 +335,217 @@ export default function SettingsPage() {
               <RefreshCw className={`w-5 h-5 ${generating ? 'animate-spin' : ''}`} />
               {generating ? 'Generowanie...' : 'Wygeneruj token'}
             </button>
+          </div>
+        )}
+      </div>
+
+      {/* Departments Management */}
+      <div className="rounded-lg bg-white p-6 shadow">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold">🏢 Działy / Grafiki</h2>
+          <button
+            onClick={() => openDepartmentForm()}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Dodaj dział
+          </button>
+        </div>
+
+        <p className="text-gray-600 mb-6">
+          Zarządzaj działami w restauracji. Każdy dział może mieć przypisanych pracowników i zmiany.
+        </p>
+
+        {departmentsLoading ? (
+          <div className="text-center py-8">
+            <div className="text-4xl mb-2">⏳</div>
+            <div className="text-gray-600">Ładowanie działów...</div>
+          </div>
+        ) : departments.length === 0 ? (
+          <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+            <div className="text-4xl mb-2">📁</div>
+            <p className="text-gray-600 mb-4">Brak działów</p>
+            <button
+              onClick={() => openDepartmentForm()}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 inline-flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Dodaj pierwszy dział
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {departments.map((dept) => (
+              <div
+                key={dept.id}
+                className={`p-4 rounded-lg border-2 ${
+                  dept.isActive
+                    ? 'border-gray-200 bg-white'
+                    : 'border-gray-300 bg-gray-100 opacity-60'
+                }`}
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-4 h-4 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: dept.color }}
+                    />
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{dept.name}</h3>
+                      <p className="text-sm text-gray-500">Tag: {dept.roleTag}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => openDepartmentForm(dept)}
+                      className="p-2 hover:bg-gray-200 rounded transition-colors"
+                      title="Edytuj"
+                    >
+                      <Edit2 className="w-4 h-4 text-gray-600" />
+                    </button>
+                    <button
+                      onClick={() => deleteDepartment(dept)}
+                      className="p-2 hover:bg-red-100 rounded transition-colors"
+                      title="Usuń"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-600" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 text-sm text-gray-600">
+                  <span>👥 {dept._count?.memberships || 0} pracowników</span>
+                  <span>📅 {dept._count?.shifts || 0} zmian</span>
+                </div>
+
+                {!dept.isActive && (
+                  <div className="mt-3 text-xs text-gray-500 bg-yellow-50 p-2 rounded">
+                    ⚠️ Dział nieaktywny
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Department Form Modal */}
+        {showDepartmentForm && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-semibold">
+                  {editingDepartment ? 'Edytuj dział' : 'Nowy dział'}
+                </h3>
+                <button
+                  onClick={closeDepartmentForm}
+                  className="p-2 hover:bg-gray-100 rounded transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">
+                  {error}
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nazwa działu *
+                  </label>
+                  <input
+                    type="text"
+                    value={departmentForm.name}
+                    onChange={(e) =>
+                      setDepartmentForm({ ...departmentForm, name: e.target.value })
+                    }
+                    placeholder="np. Kuchnia, Bar, Sala"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tag roli *
+                  </label>
+                  <input
+                    type="text"
+                    value={departmentForm.roleTag}
+                    onChange={(e) =>
+                      setDepartmentForm({
+                        ...departmentForm,
+                        roleTag: e.target.value.toLowerCase(),
+                      })
+                    }
+                    placeholder="np. cook, bartender, waiter"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    disabled={!!editingDepartment}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    {editingDepartment
+                      ? 'Tag roli nie może być zmieniony po utworzeniu'
+                      : 'Unikalny identyfikator działu (małe litery, bez spacji)'}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Kolor
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="color"
+                      value={departmentForm.color}
+                      onChange={(e) =>
+                        setDepartmentForm({ ...departmentForm, color: e.target.value })
+                      }
+                      className="w-16 h-10 border border-gray-300 rounded cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={departmentForm.color}
+                      onChange={(e) =>
+                        setDepartmentForm({ ...departmentForm, color: e.target.value })
+                      }
+                      placeholder="#3B82F6"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Kolor do wyświetlania w interfejsie
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={closeDepartmentForm}
+                  disabled={savingDepartment}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                >
+                  Anuluj
+                </button>
+                <button
+                  onClick={saveDepartment}
+                  disabled={savingDepartment}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
+                >
+                  {savingDepartment ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      Zapisywanie...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      Zapisz
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
